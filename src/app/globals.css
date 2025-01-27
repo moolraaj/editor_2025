@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+} */
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+}
+
+
+
+.overflow-scroll::-webkit-scrollbar {
+  /* border:1px red solid; */
+  background-color: rgb(30, 41, 59);
+}
+
+.overflow-scroll::-webkit-scrollbar-thumb {
+  /* background-color: red;  */
+  background-color: rgb(22, 30, 43); 
+  
+}
+
+.overflow-scroll::-webkit-scrollbar-corner {
+  background-color: rgb(30, 41, 59);
+}
+
+
+
