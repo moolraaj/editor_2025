@@ -965,8 +965,8 @@ export class Store {
               placement: newPlacement,
               properties: {
                 ...element.properties,
-               
                 // @ts-ignore
+                text: target?.text,
                
               },
             };
