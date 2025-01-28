@@ -75,7 +75,7 @@ export const TextEditorPanel: React.FC = observer(() => {
                 >
                     {FONT_SIZES.map((size) => (
                         <option key={size} value={size}>
-                            {size}px
+                            {size}
                         </option>
                     ))}
                 </select>
