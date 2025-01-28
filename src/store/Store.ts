@@ -29,7 +29,7 @@ export class Store {
 
   possibleVideoFormats: string[] = ['mp4', 'webm'];
   selectedVideoFormat: 'mp4' | 'webm';
-  
+
 
   constructor() {
     this.canvas = null;
@@ -53,56 +53,72 @@ export class Store {
 
 
 
-  //////////////////////////////
+ 
 
 
 
   setFontSize(size: number) {
     if (!this.selectedElement || this.selectedElement.type !== "text") return;
-  
+
     this.selectedElement.properties.fontSize = size;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontSize", size);
+
+    this.updateEditorElement(this.selectedElement);  
     this.canvas?.renderAll();
   }
 
+
   setTextColor(color: string) {
     if (!this.selectedElement || this.selectedElement.type !== "text") return;
-  
+
     this.selectedElement.properties.textColor = color;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fill", color);
+
+    this.updateEditorElement(this.selectedElement);  
     this.canvas?.renderAll();
   }
-  
-  
-  
+
+
+
+
+
   toggleBold() {
     if (!this.selectedElement || this.selectedElement.type !== "text") return;
-  
+
     const isBold = this.selectedElement.properties.fontWeight === "bold";
     this.selectedElement.properties.fontWeight = isBold ? "normal" : "bold";
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontWeight", isBold ? "normal" : "bold");
+
+    this.updateEditorElement(this.selectedElement);  
     this.canvas?.renderAll();
   }
-  
+
+
   toggleItalic() {
     if (!this.selectedElement || this.selectedElement.type !== "text") return;
-  
+
     const isItalic = this.selectedElement.properties.fontStyle === "italic";
     this.selectedElement.properties.fontStyle = isItalic ? "normal" : "italic";
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontStyle", isItalic ? "normal" : "italic");
+
+    this.updateEditorElement(this.selectedElement);  
     this.canvas?.renderAll();
   }
-  
+
+
   setFontFamily(fontFamily: string) {
     if (!this.selectedElement || this.selectedElement.type !== "text") return;
-  
+
     this.selectedElement.properties.fontFamily = fontFamily;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontFamily", fontFamily);
+
+    this.updateEditorElement(this.selectedElement); 
     this.canvas?.renderAll();
   }
-  
-  
-  
+
+
+
+
 
 
 
@@ -791,6 +807,7 @@ export class Store {
             scaleX: element.placement.scaleX,
             scaleY: element.placement.scaleY,
             angle: element.placement.rotation,
+
             objectCaching: false,
             selectable: true,
             lockUniScaling: true,
@@ -917,11 +934,14 @@ export class Store {
             height: element.placement.height,
             angle: element.placement.rotation,
             fontSize: element.properties.fontSize,
-            fontWeight: element.properties.fontWeight,
             objectCaching: false,
             selectable: true,
             lockUniScaling: true,
-            fill: "#ffffff",
+            fontFamily: element.properties.fontFamily || "Arial",
+            fill: element.properties.textColor || "#ffffff",
+            text: element.properties.text,
+            fontWeight: element.properties.fontWeight || "normal",
+            fontStyle: element.properties.fontStyle || "normal",
           });
           element.fabricObject = textObject;
           canvas.add(textObject);
@@ -945,8 +965,9 @@ export class Store {
               placement: newPlacement,
               properties: {
                 ...element.properties,
+               
                 // @ts-ignore
-                text: target?.text,
+               
               },
             };
             store.updateEditorElement(newElement);

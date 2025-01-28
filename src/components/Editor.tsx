@@ -81,9 +81,7 @@ export const Editor = observer(() => {
       <div className="col-start-3 row-start-2 col-span-2 relative px-[10px] py-[4px] overflow-scroll bg-[#20272D] border-t-2 border-b-2  border-gray-500">
         <TimeLine />
       </div>
-      <div className="col-span-4 text-right px-2 text-[0.5em] bg-[#0E0E0E] text-white">
-        Created By Spark Web Solutions
-      </div>
+     
     </div>
   );
 });

@@ -15,7 +15,7 @@ export const VideoResourcesPanel = observer(() => {
   return (
     <>
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
-        Videos
+        Upload Video
       </div>
       {store.videos.map((video, index) => {
         return <VideoResource key={video} video={video} index={index} />;

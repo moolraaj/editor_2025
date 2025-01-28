@@ -83,3 +83,29 @@ body {
   color: #fff;
   font-weight: bold;
 } 
+
+.text-right {
+  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 26px;
+  gap: 8px;
+}
+.text-right button {
+  background: rgb(14 14 14);
+  width: 100%;
+  color: #fff;
+  border-radius: 4px;
+}
+.text_left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.elements_holder {
+  border-bottom: 1px solid #ffffff36;
+  margin: 0px;
+  padding: 6px;
+  cursor: pointer;
+}
+ 

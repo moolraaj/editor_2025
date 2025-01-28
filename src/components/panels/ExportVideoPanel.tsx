@@ -9,12 +9,12 @@ export const ExportVideoPanel = observer(() => {
   return (
     <>
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
-        Export
+        Export 
       </div>
       {/* Set max time from number input */}
       <div className="px-[16px]">
         <div className="flex flex-row items-center my-2 text-white">
-          <div className="text-xs font-semibold mr-2">Video Length:</div>
+          <div className="text-xs font-semibold mr-2">Video Length</div>
           <input
             type="number"
             className="text-black rounded text-center border-slate-200 placeholder-slate-400 contrast-more:border-slate-400 contrast-more:placeholder-slate-500 max-w-[50px] mr-2"
@@ -26,14 +26,11 @@ export const ExportVideoPanel = observer(() => {
           />
           <div>secs</div>
         </div>
-        <div className="flex flex-row items-center my-2 text-white">
-          <div className="text-xs font-semibold mr-2">Canvas Resolution:</div>
-          <div className="text-xs mr-2">Todo</div>
-        </div>
+         
       </div>
       {/*  Format selection with radio button */}
       <div className="px-[16px] text-white">
-        <div className="text-xs font-semibold mr-2">Video Format:</div>
+        <div className="text-xs font-semibold mr-2">Video Format</div>
         <div className="flex flex-row items-center my-2">
           <input
             type="radio"
