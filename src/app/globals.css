@@ -108,4 +108,19 @@ body {
   padding: 6px;
   cursor: pointer;
 }
- 
+.video_flex_wrapper {
+  margin: 20px 0px 0px 0px;
+  display: flex;
+} 
+.upload_button {
+  margin-top: 20px;
+}
+
+.export_button {
+  margin: 14px 14px 0px 14px;
+  background: rgb(14 14 14);
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 4px;
+  padding: 10px 8px;
+}

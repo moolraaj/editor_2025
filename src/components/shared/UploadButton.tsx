@@ -5,6 +5,8 @@ export type UploadButtonProps = {
 };
 export const UploadButton = (props: UploadButtonProps) => {
   return (
+    <div className="upload_button">
+
     <label htmlFor="fileInput" className={props.className}>
       <input
         id="fileInput"
@@ -15,5 +17,6 @@ export const UploadButton = (props: UploadButtonProps) => {
       />
       Upload
     </label>
+    </div>
   );
 };

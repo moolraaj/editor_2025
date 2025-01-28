@@ -8,7 +8,7 @@ import { TextEditorPanel } from "./TextEditorPanel";
 
 const TEXT_RESOURCES = [
   {
-    name: "Text",
+    name: "Title",
     fontSize: 28,
     fontWeight: 600,
   },
