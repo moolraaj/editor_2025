@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { StoreContext } from "@/store";
-import { observer } from "mobx-react";
+import { observer } from "mobx-react-lite";
 import { MdClose } from "react-icons/md";
 import { ALL_FONTS } from "@/utils/constants";
 

@@ -2,7 +2,7 @@
 import React from "react";
 import { StoreContext } from "@/store";
 // import { formatTimeToMinSec } from "@/utils";
-import { observer } from "mobx-react";
+ 
 import { MdDelete } from "react-icons/md";
 import {
   Animation,
@@ -13,6 +13,7 @@ import {
   SlideOutAnimation,
   SlideTextType,
 } from "@/types";
+import { observer } from "mobx-react-lite";
 
 const ANIMATION_TYPE_TO_LABEL: Record<string, string> = {
   fadeIn: "Fade In",

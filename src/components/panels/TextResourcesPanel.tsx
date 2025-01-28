@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { observer } from "mobx-react";
+import { observer } from "mobx-react-lite";
 import { TextResource } from "../entity/TextResource";
 import { Store } from "@/store/Store";
 import { StoreContext } from "@/store";

@@ -2,8 +2,9 @@
 import React from "react";
 import { StoreContext } from "@/store";
 // import { formatTimeToMinSec } from "@/utils";
-import { observer } from "mobx-react";
+ 
 import { VideoEditorElement, ImageEditorElement, EffecType } from "@/types";
+import { observer } from "mobx-react-lite";
 
 const EFFECT_TYPE_TO_LABEL: Record<string, string> = {
   blackAndWhite: "Black and White",

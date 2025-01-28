@@ -2,7 +2,7 @@
 import React from "react";
 import { EditorElement } from "@/types";
 import { StoreContext } from "@/store";
-import { observer } from "mobx-react";
+import { observer } from "mobx-react-lite";
 import DragableView from "./DragableView";
 
 export const TimeFrameView = observer((props: { element: EditorElement }) => {

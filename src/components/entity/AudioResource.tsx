@@ -2,8 +2,9 @@
 import React from "react";
 import { StoreContext } from "@/store";
 import { formatTimeToMinSec } from "@/utils";
-import { observer } from "mobx-react";
+ 
 import { MdAdd } from "react-icons/md";
+import { observer } from "mobx-react-lite";
 
 export type AudioResourceProps = {
   audio: string;
