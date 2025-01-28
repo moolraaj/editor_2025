@@ -1,7 +1,7 @@
 "use client";
 
 import { fabric } from "fabric";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { StoreContext } from "@/store";
 import { observer } from "mobx-react";
 import { Resources } from "./Resources";
@@ -10,6 +10,7 @@ import { Menu } from "./Menu";
 import { TimeLine } from "./TimeLine";
 import { Store } from "@/store/Store";
 import "@/utils/fabric-utils";
+ 
 
 export const EditorWithStore = () => {
   const [store] = useState(new Store());
@@ -21,31 +22,45 @@ export const EditorWithStore = () => {
 }
 
 export const Editor = observer(() => {
-  const store = React.useContext(StoreContext);
+  const store = useContext(StoreContext);
+  const canvasRef = useRef<fabric.Canvas | null>(null);
 
   useEffect(() => {
-    const canvas = new fabric.Canvas("canvas", {
-      height: 500,
-      width: 800,
-      backgroundColor: "#ededed",
-    });
-    fabric.Object.prototype.transparentCorners = false;
-    fabric.Object.prototype.cornerColor = "#00a0f5";
-    fabric.Object.prototype.cornerStyle = "circle";
-    fabric.Object.prototype.cornerStrokeColor = "#0063d8";
-    fabric.Object.prototype.cornerSize = 10;
-    // canvas mouse down without target should deselect active object
-    canvas.on("mouse:down", function (e) {
-      if (!e.target) {
-        store.setSelectedElement(null);
-      }
-    });
+    if (!store.canvas) {
+      const canvas = new fabric.Canvas("canvas", {
+        height: 500,
+        width: 800,
+        backgroundColor: "#ededed",
+        selection: true, 
+      });
 
-    store.setCanvas(canvas);
-    fabric.util.requestAnimFrame(function render() {
-      canvas.renderAll();
-      fabric.util.requestAnimFrame(render);
-    });
+      fabric.Object.prototype.transparentCorners = false;
+      fabric.Object.prototype.cornerColor = "#00a0f5";
+      fabric.Object.prototype.cornerStyle = "circle";
+      fabric.Object.prototype.cornerStrokeColor = "#0063d8";
+      fabric.Object.prototype.cornerSize = 10;
+      fabric.Object.prototype.lockScalingFlip = true;
+      fabric.Object.prototype.borderColor = "#ff0000";  
+      fabric.Object.prototype.cornerSize = 10;
+      
+      store.setCanvas(canvas);
+      canvasRef.current = canvas;
+
+     
+      
+
+    
+      canvas.on("mouse:down", function (e) {
+        if (!e.target) {
+          store.setSelectedElement(null);
+        }
+      });
+      store.canvas = canvas;
+      fabric.util.requestAnimFrame(function render() {
+        canvas.renderAll();
+        fabric.util.requestAnimFrame(render);
+      });
+    }
   }, []);
   return (
     <div className="grid grid-rows-[500px_1fr_20px] grid-cols-[72px_300px_1fr_250px] h-[100svh]">
@@ -60,6 +75,7 @@ export const Editor = observer(() => {
         <canvas id="canvas" className="h-[500px] w-[800px] row" />
       </div>
       <div className="col-start-4 row-start-1 border-l-2 border-gray-500">
+      
         <ElementsPanel />
       </div>
       <div className="col-start-3 row-start-2 col-span-2 relative px-[10px] py-[4px] overflow-scroll bg-[#20272D] border-t-2 border-b-2  border-gray-500">

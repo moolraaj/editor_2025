@@ -1,66 +1,35 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react";
 import { TextResource } from "../entity/TextResource";
+import { Store } from "@/store/Store";
+import { StoreContext } from "@/store";
+import { TextEditorPanel } from "./TextEditorPanel";
 
 const TEXT_RESOURCES = [
   {
-    name: "Title",
+    name: "Text",
     fontSize: 28,
     fontWeight: 600,
   },
-  {
-    name: "Subtitle",
-    fontSize: 16,
-    fontWeight: 600,
-  },
-  {
-    name: "Body",
-    fontSize: 14,
-    fontWeight: 400,
-  },
-  {
-    name: "Caption",
-    fontSize: 12,
-    fontWeight: 400,
-  },
-  {
-    name: "Heading 1",
-    fontSize: 24,
-    fontWeight: 800,
-  },
-  {
-    name: "Heading 2",
-    fontSize: 20,
-    fontWeight: 800,
-  },
-  {
-    name: "Heading 3",
-    fontSize: 18,
-    fontWeight: 800,
-  },
-  {
-    name: "Heading 4",
-    fontSize: 16,
-    fontWeight: 800,
-  },
-  {
-    name: "Heading 5",
-    fontSize: 14,
-    fontWeight: 800,
-  },
-  {
-    name: "Heading 6",
-    fontSize: 12,
-    fontWeight: 800,
-  },
+   
 ];
 
+export const TextResourcePanleWithStore = () => {
+  const [store] = useState(new Store());
+  return (
+    <StoreContext.Provider value={store}>
+      <TextResourcesPanel></TextResourcesPanel>
+    </StoreContext.Provider>
+  );
+}
+
 export const TextResourcesPanel = observer(() => {
+   const store = React.useContext(StoreContext);
   return (
     <div className="bg-[#20272D] h-full">
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
-        Text
+        Text Panel
       </div>
       <ul>
 
@@ -79,6 +48,8 @@ export const TextResourcesPanel = observer(() => {
           );
         })}
       </ul>
+        {store.selectedElement?.type === "text" ? <TextEditorPanel /> : ""}
+      
     </div>
   );
 });

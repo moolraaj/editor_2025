@@ -27,10 +27,14 @@ export type TextEditorElement = EditorElementBase<
   {
     text: string;
     fontSize: number;
-    fontWeight: number;
+    fontWeight: number | string;
+    fontStyle?: "normal" | "italic";  
+    textColor?: string;  
+    fontFamily?: string;  
     splittedTexts: fabric.Text[];
   }
 >;
+
 
 export type EditorElement =
   | VideoEditorElement

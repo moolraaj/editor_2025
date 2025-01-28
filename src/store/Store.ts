@@ -29,6 +29,7 @@ export class Store {
 
   possibleVideoFormats: string[] = ['mp4', 'webm'];
   selectedVideoFormat: 'mp4' | 'webm';
+  
 
   constructor() {
     this.canvas = null;
@@ -48,6 +49,76 @@ export class Store {
     this.selectedVideoFormat = 'mp4';
     makeAutoObservable(this);
   }
+
+
+
+
+  //////////////////////////////
+
+
+
+  setFontSize(size: number) {
+    if (!this.selectedElement || this.selectedElement.type !== "text") return;
+  
+    this.selectedElement.properties.fontSize = size;
+    (this.selectedElement.fabricObject as fabric.Text)?.set("fontSize", size);
+    this.canvas?.renderAll();
+  }
+
+  setTextColor(color: string) {
+    if (!this.selectedElement || this.selectedElement.type !== "text") return;
+  
+    this.selectedElement.properties.textColor = color;
+    (this.selectedElement.fabricObject as fabric.Text)?.set("fill", color);
+    this.canvas?.renderAll();
+  }
+  
+  
+  
+  toggleBold() {
+    if (!this.selectedElement || this.selectedElement.type !== "text") return;
+  
+    const isBold = this.selectedElement.properties.fontWeight === "bold";
+    this.selectedElement.properties.fontWeight = isBold ? "normal" : "bold";
+    (this.selectedElement.fabricObject as fabric.Text)?.set("fontWeight", isBold ? "normal" : "bold");
+    this.canvas?.renderAll();
+  }
+  
+  toggleItalic() {
+    if (!this.selectedElement || this.selectedElement.type !== "text") return;
+  
+    const isItalic = this.selectedElement.properties.fontStyle === "italic";
+    this.selectedElement.properties.fontStyle = isItalic ? "normal" : "italic";
+    (this.selectedElement.fabricObject as fabric.Text)?.set("fontStyle", isItalic ? "normal" : "italic");
+    this.canvas?.renderAll();
+  }
+  
+  setFontFamily(fontFamily: string) {
+    if (!this.selectedElement || this.selectedElement.type !== "text") return;
+  
+    this.selectedElement.properties.fontFamily = fontFamily;
+    (this.selectedElement.fabricObject as fabric.Text)?.set("fontFamily", fontFamily);
+    this.canvas?.renderAll();
+  }
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   get currentTimeInMs() {
     return this.currentKeyFrame * 1000 / this.fps;

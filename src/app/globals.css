@@ -37,8 +37,8 @@ body {
 
 .overflow-scroll::-webkit-scrollbar-thumb {
   /* background-color: red;  */
-  background-color: rgb(22, 30, 43); 
-  
+  background-color: rgb(22, 30, 43);
+
 }
 
 .overflow-scroll::-webkit-scrollbar-corner {
@@ -46,4 +46,40 @@ body {
 }
 
 
+.text-editor-panel {
+  background: rgb(30 41 59);
+  padding: 20px;
+  border: 1px solid #ffffff36;
+  margin: 18px;
+  border-radius: 4px;
+  position: relative;
+}
+.text-holder {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid #ffffff36;
+  padding: 8px 0px;
+  gap: 8px;
+}
 
+ 
+
+.text-holder label {
+  color: #fff;
+}
+.text-holder:nth-child(2) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}
+.text-holder input {
+  width: 100%;
+}
+
+.text-editor-panel .close-button {
+  position: absolute;
+  right: 13px;
+  top: 14px;
+  color: #fff;
+  font-weight: bold;
+} 
