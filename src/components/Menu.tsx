@@ -57,20 +57,20 @@ const MENU_OPTIONS = [
       store.setSelectedMenuOption("Video");
     },
   },
-  // {
-  //   name: "Audio",
-  //   icon: MdAudiotrack,
-  //   action: (store: Store) => {
-  //     store.setSelectedMenuOption("Audio");
-  //   },
-  // },
-  // {
-  //   name: "Image",
-  //   icon: MdImage,
-  //   action: (store: Store) => {
-  //     store.setSelectedMenuOption("Image");
-  //   },
-  // },
+  {
+    name: "Audio",
+    icon: MdAudiotrack,
+    action: (store: Store) => {
+      store.setSelectedMenuOption("Audio");
+    },
+  },
+  {
+    name: "Image",
+    icon: MdImage,
+    action: (store: Store) => {
+      store.setSelectedMenuOption("Image");
+    },
+  },
   {
     name: "Text",
     icon: MdTitle,
