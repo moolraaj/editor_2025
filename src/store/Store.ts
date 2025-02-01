@@ -29,7 +29,6 @@ export class Store {
 
   possibleVideoFormats: string[] = ['mp4', 'webm'];
   selectedVideoFormat: 'mp4' | 'webm';
-
   audioContext: AudioContext | null = null;
   audioSourceNodes: Map<string, MediaElementAudioSourceNode> = new Map();
 
@@ -704,160 +703,110 @@ export class Store {
   }
 
   saveCanvasToVideoWithAudio() {
-    if (this.selectedVideoFormat === "mp4") {
-      this.saveCanvasToVideoWithAudioMP4();
-    } else {
-      this.saveCanvasToVideoWithAudioWebM();
-    }
+    this.saveCanvasToVideoWithAudioWebmMp4();
   }
 
-
-  saveCanvasToVideoWithAudioWebM() {
-    console.log('Exporting to WebM');
+  saveCanvasToVideoWithAudioWebmMp4() {
+    console.log('modified');
+    let mp4 = this.selectedVideoFormat === 'mp4';
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const stream = canvas.captureStream(30);
+    const audioElements = this.editorElements.filter(isEditorAudioElement);
+    const audioStreams: MediaStream[] = [];
 
-    // ✅ Reuse or create AudioContext
+    // ✅ Ensure AudioContext is initialized
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
     }
 
-    let audioDestination = this.audioContext.createMediaStreamDestination();
-    const audioElements = this.editorElements.filter(isEditorAudioElement);
+    // 🔥 TypeScript doesn't trust `this.audioContext`, so we force-assert it
+    const audioContext = this.audioContext!; // 🔥 Now TypeScript knows it's never null
 
     audioElements.forEach((audio) => {
       const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
 
-      // ✅ Ensure sourceNode is created only if it doesn’t exist
+      // ✅ Ensure sourceNode is always defined before use
       let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
       if (!sourceNode) {
-        sourceNode = this.audioContext!.createMediaElementSource(audioElement);
+        sourceNode = audioContext.createMediaElementSource(audioElement);
         this.audioSourceNodes.set(audio.properties.elementId, sourceNode);
       }
 
-      // ✅ Assert sourceNode is defined before calling connect()
-      if (sourceNode) {
-        sourceNode.connect(audioDestination);
+      if (!sourceNode) {
+        console.error("Error: sourceNode is undefined for", audio.properties.elementId);
+        return; // Prevents crashes
       }
+
+      // ✅ Now TypeScript knows `dest` is never null
+      const dest = audioContext.createMediaStreamDestination();
+      sourceNode.connect(dest);
+      audioStreams.push(dest.stream);
     });
 
-    // ✅ Add audio tracks to the video stream
-    audioDestination.stream.getAudioTracks().forEach((track) => {
-      stream.addTrack(track);
+    audioStreams.forEach((audioStream) => {
+      if (audioStream.getAudioTracks().length > 0) {
+        stream.addTrack(audioStream.getAudioTracks()[0]);
+      }
     });
 
     const video = document.createElement("video");
     video.srcObject = stream;
-    video.height = 500;
-    video.width = 800;
+    video.height = canvas.height;
+    video.width = canvas.width;
 
     video.play().then(() => {
+      console.log("Video is playing...");
+
       const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = function (e) {
         chunks.push(e.data);
+        console.log("data available");
       };
 
-      mediaRecorder.onstop = function () {
+      mediaRecorder.onstop = async function () {
         const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "video.webm";
-        a.click();
+
+        if (mp4) {
+          const data = new Uint8Array(await blob.arrayBuffer());
+          const ffmpeg = new FFmpeg();
+          const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd";
+
+          await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          });
+
+          await ffmpeg.writeFile('video.webm', data);
+          await ffmpeg.exec(["-y", "-i", "video.webm", "-c:v", "libx264", "-c:a", "aac", "video.mp4"]);
+
+          const output = await ffmpeg.readFile('video.mp4');
+          const outputBlob = new Blob([output], { type: "video/mp4" });
+          const outputUrl = URL.createObjectURL(outputBlob);
+
+          const a = document.createElement("a");
+          a.download = "video.mp4";
+          a.href = outputUrl;
+          a.click();
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "video.webm";
+          a.click();
+        }
       };
 
       mediaRecorder.start();
       setTimeout(() => {
         mediaRecorder.stop();
       }, this.maxTime);
-
-      video.remove();
     });
   }
 
 
-  saveCanvasToVideoWithAudioMP4() {
-    console.log('Exporting to MP4');
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const stream = canvas.captureStream(30);
 
-    // ✅ Ensure AudioContext is created once
-    if (!this.audioContext) {
-        this.audioContext = new AudioContext();
-    }
-
-    let audioDestination = this.audioContext.createMediaStreamDestination();
-    const audioElements = this.editorElements.filter(isEditorAudioElement);
-
-    audioElements.forEach((audio) => {
-        const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
-
-      
-        let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
-        if (!sourceNode) {
-            sourceNode = this.audioContext!.createMediaElementSource(audioElement);
-            this.audioSourceNodes.set(audio.properties.elementId, sourceNode);
-        }
-
-         
-        if (sourceNode) {
-            sourceNode.connect(audioDestination);
-        }
-    });
-
- 
-    audioDestination.stream.getAudioTracks().forEach((track) => {
-        stream.addTrack(track);
-    });
-
-    const video = document.createElement("video");
-    video.srcObject = stream;
-    video.height = 500;
-    video.width = 800;
-
-    video.play().then(() => {
-        const mediaRecorder = new MediaRecorder(stream);
-        const chunks: Blob[] = [];
-
-        mediaRecorder.ondataavailable = function (e) {
-            chunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = async function () {
-            const blob = new Blob(chunks, { type: "video/webm" });
-
-             const data = new Uint8Array(await blob.arrayBuffer());
-            const ffmpeg = new FFmpeg();
-            const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd";
-
-            await ffmpeg.load({
-                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-            });
-
-            await ffmpeg.writeFile('video.webm', data);
-            await ffmpeg.exec(["-y", "-i", "video.webm", "-c:v", "libx264", "-c:a", "aac", "video.mp4"]);
-
-            const output = await ffmpeg.readFile('video.mp4');
-            const outputBlob = new Blob([output], { type: "video/mp4" });
-            const outputUrl = URL.createObjectURL(outputBlob);
-
-            const a = document.createElement("a");
-            a.download = "video.mp4";
-            a.href = outputUrl;
-            a.click();
-        };
-
-        mediaRecorder.start();
-        setTimeout(() => {
-            mediaRecorder.stop();
-        }, this.maxTime);
-
-        video.remove();
-    });
-}
 
 
 
