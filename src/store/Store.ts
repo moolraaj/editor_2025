@@ -30,6 +30,9 @@ export class Store {
   possibleVideoFormats: string[] = ['mp4', 'webm'];
   selectedVideoFormat: 'mp4' | 'webm';
 
+  audioContext: AudioContext | null = null;
+  audioSourceNodes: Map<string, MediaElementAudioSourceNode> = new Map();
+
 
   constructor() {
     this.canvas = null;
@@ -53,7 +56,7 @@ export class Store {
 
 
 
- 
+
 
 
 
@@ -63,7 +66,7 @@ export class Store {
     this.selectedElement.properties.fontSize = size;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontSize", size);
 
-    this.updateEditorElement(this.selectedElement);  
+    this.updateEditorElement(this.selectedElement);
     this.canvas?.renderAll();
   }
 
@@ -74,7 +77,7 @@ export class Store {
     this.selectedElement.properties.textColor = color;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fill", color);
 
-    this.updateEditorElement(this.selectedElement);  
+    this.updateEditorElement(this.selectedElement);
     this.canvas?.renderAll();
   }
 
@@ -89,7 +92,7 @@ export class Store {
     this.selectedElement.properties.fontWeight = isBold ? "normal" : "bold";
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontWeight", isBold ? "normal" : "bold");
 
-    this.updateEditorElement(this.selectedElement);  
+    this.updateEditorElement(this.selectedElement);
     this.canvas?.renderAll();
   }
 
@@ -101,7 +104,7 @@ export class Store {
     this.selectedElement.properties.fontStyle = isItalic ? "normal" : "italic";
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontStyle", isItalic ? "normal" : "italic");
 
-    this.updateEditorElement(this.selectedElement);  
+    this.updateEditorElement(this.selectedElement);
     this.canvas?.renderAll();
   }
 
@@ -112,7 +115,7 @@ export class Store {
     this.selectedElement.properties.fontFamily = fontFamily;
     (this.selectedElement.fabricObject as fabric.Text)?.set("fontFamily", fontFamily);
 
-    this.updateEditorElement(this.selectedElement); 
+    this.updateEditorElement(this.selectedElement);
     this.canvas?.renderAll();
   }
 
@@ -701,82 +704,162 @@ export class Store {
   }
 
   saveCanvasToVideoWithAudio() {
-    this.saveCanvasToVideoWithAudioWebmMp4();
+    if (this.selectedVideoFormat === "mp4") {
+      this.saveCanvasToVideoWithAudioMP4();
+    } else {
+      this.saveCanvasToVideoWithAudioWebM();
+    }
   }
 
-  saveCanvasToVideoWithAudioWebmMp4() {
-    console.log('modified')
-    let mp4 = this.selectedVideoFormat === 'mp4'
+
+  saveCanvasToVideoWithAudioWebM() {
+    console.log('Exporting to WebM');
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const stream = canvas.captureStream(30);
-    const audioElements = this.editorElements.filter(isEditorAudioElement)
-    const audioStreams: MediaStream[] = [];
+
+    // ✅ Reuse or create AudioContext
+    if (!this.audioContext) {
+      this.audioContext = new AudioContext();
+    }
+
+    let audioDestination = this.audioContext.createMediaStreamDestination();
+    const audioElements = this.editorElements.filter(isEditorAudioElement);
+
     audioElements.forEach((audio) => {
       const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
-      let ctx = new AudioContext();
-      let sourceNode = ctx.createMediaElementSource(audioElement);
-      let dest = ctx.createMediaStreamDestination();
-      sourceNode.connect(dest);
-      sourceNode.connect(ctx.destination);
-      audioStreams.push(dest.stream);
+
+      // ✅ Ensure sourceNode is created only if it doesn’t exist
+      let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
+      if (!sourceNode) {
+        sourceNode = this.audioContext!.createMediaElementSource(audioElement);
+        this.audioSourceNodes.set(audio.properties.elementId, sourceNode);
+      }
+
+      // ✅ Assert sourceNode is defined before calling connect()
+      if (sourceNode) {
+        sourceNode.connect(audioDestination);
+      }
     });
-    audioStreams.forEach((audioStream) => {
-      stream.addTrack(audioStream.getAudioTracks()[0]);
+
+    // ✅ Add audio tracks to the video stream
+    audioDestination.stream.getAudioTracks().forEach((track) => {
+      stream.addTrack(track);
     });
+
     const video = document.createElement("video");
     video.srcObject = stream;
     video.height = 500;
     video.width = 800;
-    // video.controls = true;
-    // document.body.appendChild(video);
+
     video.play().then(() => {
       const mediaRecorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
+
       mediaRecorder.ondataavailable = function (e) {
         chunks.push(e.data);
-        console.log("data available");
-
       };
-      mediaRecorder.onstop = async function (e) {
+
+      mediaRecorder.onstop = function () {
         const blob = new Blob(chunks, { type: "video/webm" });
-
-        if (mp4) {
-          // lets use ffmpeg to convert webm to mp4
-          const data = new Uint8Array(await (blob).arrayBuffer());
-          const ffmpeg = new FFmpeg();
-          const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd"
-          await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-            // workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
-          });
-          await ffmpeg.writeFile('video.webm', data);
-          await ffmpeg.exec(["-y", "-i", "video.webm", "-c", "copy", "video.mp4"]);
-          // await ffmpeg.exec(["-y", "-i", "video.webm", "-c:v", "libx264", "video.mp4"]);
-
-          const output = await ffmpeg.readFile('video.mp4');
-          const outputBlob = new Blob([output], { type: "video/mp4" });
-          const outputUrl = URL.createObjectURL(outputBlob);
-          const a = document.createElement("a");
-          a.download = "video.mp4";
-          a.href = outputUrl;
-          a.click();
-
-        } else {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "video.webm";
-          a.click();
-        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "video.webm";
+        a.click();
       };
+
       mediaRecorder.start();
       setTimeout(() => {
         mediaRecorder.stop();
       }, this.maxTime);
+
       video.remove();
-    })
+    });
   }
+
+
+  saveCanvasToVideoWithAudioMP4() {
+    console.log('Exporting to MP4');
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const stream = canvas.captureStream(30);
+
+    // ✅ Ensure AudioContext is created once
+    if (!this.audioContext) {
+        this.audioContext = new AudioContext();
+    }
+
+    let audioDestination = this.audioContext.createMediaStreamDestination();
+    const audioElements = this.editorElements.filter(isEditorAudioElement);
+
+    audioElements.forEach((audio) => {
+        const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
+
+      
+        let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
+        if (!sourceNode) {
+            sourceNode = this.audioContext!.createMediaElementSource(audioElement);
+            this.audioSourceNodes.set(audio.properties.elementId, sourceNode);
+        }
+
+         
+        if (sourceNode) {
+            sourceNode.connect(audioDestination);
+        }
+    });
+
+ 
+    audioDestination.stream.getAudioTracks().forEach((track) => {
+        stream.addTrack(track);
+    });
+
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.height = 500;
+    video.width = 800;
+
+    video.play().then(() => {
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+
+        mediaRecorder.ondataavailable = function (e) {
+            chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async function () {
+            const blob = new Blob(chunks, { type: "video/webm" });
+
+             const data = new Uint8Array(await blob.arrayBuffer());
+            const ffmpeg = new FFmpeg();
+            const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd";
+
+            await ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+
+            await ffmpeg.writeFile('video.webm', data);
+            await ffmpeg.exec(["-y", "-i", "video.webm", "-c:v", "libx264", "-c:a", "aac", "video.mp4"]);
+
+            const output = await ffmpeg.readFile('video.mp4');
+            const outputBlob = new Blob([output], { type: "video/mp4" });
+            const outputUrl = URL.createObjectURL(outputBlob);
+
+            const a = document.createElement("a");
+            a.download = "video.mp4";
+            a.href = outputUrl;
+            a.click();
+        };
+
+        mediaRecorder.start();
+        setTimeout(() => {
+            mediaRecorder.stop();
+        }, this.maxTime);
+
+        video.remove();
+    });
+}
+
+
 
   refreshElements() {
     const store = this;
@@ -967,7 +1050,7 @@ export class Store {
                 ...element.properties,
                 // @ts-ignore
                 text: target?.text,
-               
+
               },
             };
             store.updateEditorElement(newElement);
