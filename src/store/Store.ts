@@ -714,18 +714,18 @@ export class Store {
     const audioElements = this.editorElements.filter(isEditorAudioElement);
     const audioStreams: MediaStream[] = [];
 
-    // ✅ Ensure AudioContext is initialized
+
     if (!this.audioContext) {
       this.audioContext = new AudioContext();
     }
 
-    // 🔥 TypeScript doesn't trust `this.audioContext`, so we force-assert it
-    const audioContext = this.audioContext!; // 🔥 Now TypeScript knows it's never null
+
+    const audioContext = this.audioContext!;
 
     audioElements.forEach((audio) => {
       const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
 
-      // ✅ Ensure sourceNode is always defined before use
+
       let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
       if (!sourceNode) {
         sourceNode = audioContext.createMediaElementSource(audioElement);
@@ -734,10 +734,9 @@ export class Store {
 
       if (!sourceNode) {
         console.error("Error: sourceNode is undefined for", audio.properties.elementId);
-        return; // Prevents crashes
+        return;
       }
 
-      // ✅ Now TypeScript knows `dest` is never null
       const dest = audioContext.createMediaStreamDestination();
       sourceNode.connect(dest);
       audioStreams.push(dest.stream);
@@ -789,12 +788,16 @@ export class Store {
           a.download = "video.mp4";
           a.href = outputUrl;
           a.click();
+          alert("✅ MP4 video has been downloaded successfully!");
+
         } else {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
           a.download = "video.webm";
           a.click();
+          alert("✅ WebM video has been downloaded successfully!");
+
         }
       };
 
