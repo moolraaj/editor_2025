@@ -24,3 +24,6 @@ export const ALL_FONTS: string[] = [
     "Rockwell",
     "Arial Black",
 ];
+
+export const WALKING:string='walking'
+export const HANDSTAND:string='handstand'

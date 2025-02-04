@@ -2,7 +2,7 @@ import { makeAutoObservable } from 'mobx';
 import { fabric } from 'fabric';
 import { getUid, isHtmlAudioElement, isHtmlImageElement, isHtmlVideoElement } from '@/utils';
 import anime, { get } from 'animejs';
-import { MenuOption, EditorElement, Animation, TimeFrame, VideoEditorElement, AudioEditorElement, Placement, ImageEditorElement, Effect, TextEditorElement } from '../types';
+import { MenuOption, EditorElement, Animation, TimeFrame, VideoEditorElement, AudioEditorElement, Placement, ImageEditorElement, Effect, TextEditorElement, SvgEditorElement } from '../types';
 import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
@@ -16,6 +16,8 @@ export class Store {
   audios: string[]
   videos: string[]
   images: string[]
+  svgs: string[]
+
   editorElements: EditorElement[]
   selectedElement: EditorElement | null;
 
@@ -37,6 +39,7 @@ export class Store {
     this.canvas = null;
     this.videos = [];
     this.images = [];
+    this.svgs = [];
     this.audios = [];
     this.editorElements = [];
     this.backgroundColor = '#111111';
@@ -51,6 +54,18 @@ export class Store {
     this.selectedVideoFormat = 'mp4';
     makeAutoObservable(this);
   }
+
+
+
+  assignAnimationToSelectedSvg(animationType: string) {
+  if (!this.selectedElement || this.selectedElement.type !== "svg") {
+    console.warn("No SVG selected.");
+    return;
+  }
+  this.selectedElement.properties.animationType = animationType;
+  console.log(`Assigned animation: ${animationType} to ${this.selectedElement.id}`);
+}
+
 
 
 
@@ -185,6 +200,10 @@ export class Store {
   }
   addImageResource(image: string) {
     this.images = [...this.images, image];
+  }
+
+  addSvgResource(svg: string) {
+    this.svgs = [...this.svgs, svg];
   }
 
   addAnimation(animation: Animation) {
@@ -566,6 +585,107 @@ export class Store {
     );
   }
 
+  addSvg(index: number) {
+    console.log("Adding SVG:", index);
+    const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement;
+    if (!svgElement) {
+      console.error("SVG Element not found:", `svg-${index}`);
+      return;
+    }
+
+    const id = getUid();
+    
+    // Load SVG from URL
+    fabric.loadSVGFromURL(svgElement.src, (objects, options) => {
+      if (!objects || objects.length === 0) {
+        console.error("Failed to load SVG objects");
+        return;
+      }
+
+      const group = fabric.util.groupSVGElements(objects, {
+        ...options,
+        left: 0,
+        top: 0,
+        scaleX: 1,
+        scaleY: 1,
+      });
+
+      // Calculate aspect ratio
+      const aspectRatio = group.width! / group.height! || 1;
+
+      // Set default dimensions
+      const defaultWidth = 200;
+      const defaultHeight = defaultWidth / aspectRatio;
+
+      // Create editor element
+      const editorElement: SvgEditorElement = {
+        id,
+        name: `SVG ${index + 1}`,
+        type: "svg",
+        placement: {
+          x: 0,
+          y: 0,
+          width: defaultWidth,
+          height: defaultHeight,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+        },
+        timeFrame: {
+          start: 0,
+          end: this.maxTime,
+        },
+        properties: {
+          elementId: `svg-${id}`,
+          src: svgElement.src,
+        },
+        fabricObject: group
+      };
+
+      
+      if (this.canvas) {
+      
+        group.set({
+          left: editorElement.placement.x,
+          top: editorElement.placement.y,
+          scaleX: editorElement.placement.width / group.width!,
+          scaleY: editorElement.placement.height / group.height!,
+          selectable: true,
+          name: editorElement.id
+        });
+
+        this.canvas.add(group);
+        this.canvas.renderAll();
+        
+     
+        this.canvas.on("object:modified", (e) => {
+          if (!e.target || e.target !== group) return;
+          
+          const target = e.target;
+          const placement = editorElement.placement;
+          
+          const newPlacement = {
+            ...placement,
+            x: target.left ?? placement.x,
+            y: target.top ?? placement.y,
+            rotation: target.angle ?? placement.rotation,
+            scaleX: target.scaleX ?? placement.scaleX,
+            scaleY: target.scaleY ?? placement.scaleY
+          };
+
+          this.updateEditorElement({
+            ...editorElement,
+            placement: newPlacement
+          });
+        });
+      }
+
+      this.addEditorElement(editorElement);
+      this.setSelectedElement(editorElement);
+    });
+  }
+
+
   addAudio(index: number) {
     const audioElement = document.getElementById(`audio-${index}`)
     if (!isHtmlAudioElement(audioElement)) {
@@ -788,7 +908,7 @@ export class Store {
           a.download = "video.mp4";
           a.href = outputUrl;
           a.click();
-          alert("✅ MP4 video has been downloaded successfully!");
+          alert("✅ MP4 video has been downloaded successfully !");
 
         } else {
           const url = URL.createObjectURL(blob);
@@ -958,6 +1078,52 @@ export class Store {
         case "audio": {
           break;
         }
+        case "svg": {
+          if (!element.fabricObject) {
+            fabric.loadSVGFromURL(element.properties.src, (objects, options) => {
+              const group = fabric.util.groupSVGElements(objects, {
+                ...options,
+                name: element.id,
+                left: element.placement.x,
+                top: element.placement.y,
+                scaleX: element.placement.scaleX,
+                scaleY: element.placement.scaleY,
+                angle: element.placement.rotation,
+                selectable: true
+              });
+    
+              element.fabricObject = group;
+              this.canvas?.add(group);
+              this.canvas?.renderAll();
+    
+              // Add modification listener
+              this.canvas?.on("object:modified", (e) => {
+                if (!e.target || e.target !== group) return;
+                
+                const target = e.target;
+                const placement = element.placement;
+                
+                const newPlacement = {
+                  ...placement,
+                  x: target.left ?? placement.x,
+                  y: target.top ?? placement.y,
+                  rotation: target.angle ?? placement.rotation,
+                  scaleX: target.scaleX ?? placement.scaleX,
+                  scaleY: target.scaleY ?? placement.scaleY
+                };
+    
+                this.updateEditorElement({
+                  ...element,
+                  placement: newPlacement
+                });
+              });
+            });
+          } else {
+            this.canvas?.add(element.fabricObject);
+          }
+          break;
+        }
+
         case "text": {
           const textObject = new fabric.Textbox(element.properties.text, {
             name: element.id,
@@ -1046,6 +1212,12 @@ export function isEditorImageElement(
   element: EditorElement
 ): element is ImageEditorElement {
   return element.type === "image";
+}
+
+export function isEditorSvgElement(
+  element: EditorElement
+): element is SvgEditorElement {
+  return element.type === "svg";
 }
 
 

@@ -28,11 +28,15 @@ export type TextEditorElement = EditorElementBase<
     text: string;
     fontSize: number;
     fontWeight: number | string;
-    fontStyle?: "normal" | "italic";  
-    textColor?: string;  
-    fontFamily?: string;  
+    fontStyle?: "normal" | "italic";
+    textColor?: string;
+    fontFamily?: string;
     splittedTexts: fabric.Text[];
   }
+>;
+export type SvgEditorElement = EditorElementBase<
+  "svg",
+  { src: string; elementId: string; animationType?: string } 
 >;
 
 
@@ -40,7 +44,8 @@ export type EditorElement =
   | VideoEditorElement
   | ImageEditorElement
   | AudioEditorElement
-  | TextEditorElement;
+  | TextEditorElement
+  | SvgEditorElement;
 
 export type Placement = {
   x: number;
@@ -61,11 +66,11 @@ export type EffectBase<T extends string> = {
   type: T;
 }
 
-export type BlackAndWhiteEffect = EffectBase<"none"> | 
-EffectBase<"blackAndWhite"> | 
-EffectBase<"sepia"> | 
-EffectBase<"invert"> |
-EffectBase<"saturate"> ;
+export type BlackAndWhiteEffect = EffectBase<"none"> |
+  EffectBase<"blackAndWhite"> |
+  EffectBase<"sepia"> |
+  EffectBase<"invert"> |
+  EffectBase<"saturate">;
 export type Effect = BlackAndWhiteEffect;
 export type EffecType = Effect["type"];
 
@@ -83,17 +88,17 @@ export type FadeOutAnimation = AnimationBase<"fadeOut">;
 export type BreatheAnimation = AnimationBase<"breathe">
 
 export type SlideDirection = "left" | "right" | "top" | "bottom";
-export type SlideTextType = 'none'|'character';
+export type SlideTextType = 'none' | 'character';
 export type SlideInAnimation = AnimationBase<"slideIn", {
   direction: SlideDirection,
   useClipPath: boolean,
-  textType:'none'|'character'
+  textType: 'none' | 'character'
 }>;
 
 export type SlideOutAnimation = AnimationBase<"slideOut", {
   direction: SlideDirection,
   useClipPath: boolean,
-  textType:SlideTextType,
+  textType: SlideTextType,
 }>;
 
 export type Animation =
@@ -111,4 +116,5 @@ export type MenuOption =
   | "Export"
   | "Animation"
   | "Effect"
-  | "Fill";
+  | "Fill"
+  | "SVG";

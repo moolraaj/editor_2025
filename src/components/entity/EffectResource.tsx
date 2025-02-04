@@ -25,7 +25,7 @@ export const EffectResource = observer((props: EffectResourceProps) => {
           {EFFECT_TYPE_TO_LABEL[props.editorElement.properties.effect.type]}
         </div>
       </div>
-      {/* Select effect from drop down */}
+ 
       <select
         className="bg-slate-100 text-black rounded-lg px-2 py-1 ml-2 w-16 text-xs"
         value={props.editorElement.properties.effect.type}

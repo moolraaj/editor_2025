@@ -11,6 +11,7 @@ import {
   MdAudiotrack,
   MdOutlineFormatColorFill,
   MdMovieFilter,
+  MdUploadFile
 } from "react-icons/md";
 import { Store } from "@/store/Store";
 
@@ -99,6 +100,13 @@ const MENU_OPTIONS = [
   //     store.setSelectedMenuOption("Fill");
   //   },
   // },
+  {
+    name: "Upload SVG",
+    icon: MdUploadFile,
+    action: (store: Store) => {
+      store.setSelectedMenuOption("SVG"); 
+    },
+  },
   {
     name: "Export",
     icon: MdDownload,
