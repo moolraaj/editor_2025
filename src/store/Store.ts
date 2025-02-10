@@ -460,152 +460,126 @@ export class Store {
   setMaxTime(maxTime: number) {
     this.maxTime = maxTime;
   }
+  
 
 
-  applyWalkingAnimation(svgElement: fabric.Group) {
-    if (!svgElement) return;
+applyWalkingAnimation(svgElement: fabric.Group) {
+  if (!svgElement) return;
 
-    console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
-    this.activeAnimations = [];
+  console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
+  console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
 
-    Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
+  // Apply per-part animations based on walkingAnimations
+  Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
       const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+
       if (!targetElement) {
-        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
-        return;
+          console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+          return;
       }
 
-      console.log(`✅ Applying animation to ${partId}`);
+      console.log(`✅ Found SVG part: ${partId}, applying animation`);
 
-      const anim = anime({
-        targets: { angle: targetElement.angle || 0 },
-        angle: animationData.keys.map(k => k.v),
-        duration: 3000,
-        easing: "linear",
-        loop: true,
-        update: anim => {
-          targetElement.set("angle", Number(anim.animations[0].currentValue));
-          this.canvas?.renderAll();
-        }
+      anime({
+          targets: { angle: targetElement.angle || 0 },
+          angle: animationData.keys.map(k => k.v),
+          duration: 3000,
+          easing: "linear",
+          loop: true,
+          update: (anim) => {
+              targetElement.set("angle", Number(anim.animations[0].currentValue)); 
+              this.canvas?.renderAll(); 
+          }
       });
+  });
 
-      this.activeAnimations.push(anim);
-    });
-
-    // Move entire character forward
-    const moveAnim = anime({
+  // ✅ Move the entire character forward, stop, then restart
+  anime({
       targets: svgElement,
       left: [
-        { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" },
-        { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" },
-        { value: svgElement.left || 0, duration: 0 }
+          { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" }, // Move forward
+          { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" }, // Pause
+          { value: svgElement.left || 0, duration: 0 } // Reset instantly
       ],
-      loop: true,
-      update: () => this.canvas?.renderAll()
-    });
-
-    this.activeAnimations.push(moveAnim);
-  }
-
-
-  applyHandstandAnimation(svgElement: fabric.Group) {
-    if (!svgElement) return;
-
-    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
-    this.activeAnimations = [];
-
-    Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
-      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
-      if (!targetElement) {
-        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
-        return;
-      }
-
-      console.log(`✅ Applying handstand animation to ${partId}`);
-
-      const anim = anime({
-        targets: { angle: targetElement.angle || 0 },
-        angle: animationData.keys.map(k => k.v),
-        duration: 3000,
-        easing: "linear",
-        loop: true,
-        update: anim => {
-          targetElement.set("angle", Number(anim.animations[0].currentValue));
+      loop: true,  
+      update: () => {
           this.canvas?.renderAll();
-        }
-      });
+      }
+  });
+}
 
-      this.activeAnimations.push(anim);
+applyHandstandAnimation(svgElement: fabric.Group) {
+  if (!svgElement) return;
+
+  console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
+  console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+
+  Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
+    const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+
+    if (!targetElement) {
+      console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+      return;
+    }
+
+    console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+
+    anime({
+      targets: { angle: targetElement.angle || 0 }, // Store rotation separately
+      angle: animationData.keys.map(k => k.v), // Use animation key values
+      duration: 3000,
+      easing: "linear",
+      loop: true,
+      update: (anim) => {
+        targetElement.set("angle", Number(anim.animations[0].currentValue));
+        this.canvas?.renderAll(); // Force Fabric.js to redraw
+        console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
+      },
+      complete: () => {
+        console.log(`✅ Handstand animation completed for ${partId}.`);
+      }
+    });
+  });
+}
+
+playSelectedSvgAnimation() {
+  if (!this.selectedElement || this.selectedElement.type !== "svg") {
+    console.warn("⚠️ No SVG selected or invalid selection.");
+    return;
+  }
+
+  const animationType = this.selectedElement.properties.animationType;
+  const fabricObject = this.selectedElement.fabricObject as fabric.Group;
+
+  if (!fabricObject) {
+    console.warn("⚠️ No fabric object found for the selected SVG.");
+    return;
+  }
+
+  console.log(`🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`);
+
+  if (animationType === WALKING) {
+    this.applyWalkingAnimation(fabricObject);
+  } else if (animationType === HANDSTAND) {
+    this.applyHandstandAnimation(fabricObject);
+  } else {
+    console.warn("⚠️ Invalid animation type. No animation applied.");
+  }
+}
+
+setPlaying(playing: boolean) {
+  this.playing = playing;
+  this.updateVideoElements();
+  this.updateAudioElements();
+  if (playing) {
+    this.playSelectedSvgAnimation();
+
+    this.startedTime = Date.now();
+    this.startedTimePlay = this.currentTimeInMs;
+    requestAnimationFrame(() => {
+      this.playFrames();
     });
   }
-
-
-  playSelectedSvgAnimation() {
-    if (!this.selectedElement || this.selectedElement.type !== "svg") {
-      console.warn("⚠️ No SVG selected.");
-      return;
-    }
-
-    const animationType = this.selectedElement.properties.animationType;
-    const fabricObject = this.selectedElement.fabricObject as fabric.Group;
-
-    if (!fabricObject) {
-      console.warn("⚠️ No fabric object found for the selected SVG.");
-      return;
-    }
-
-    console.log(`🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`);
-
-    // Reset animations before starting new
-    this.activeAnimations = [];
-
-    if (animationType === WALKING) {
-      this.applyWalkingAnimation(fabricObject);
-    } else if (animationType === HANDSTAND) {
-      this.applyHandstandAnimation(fabricObject);
-    } else {
-      console.warn("⚠️ Invalid animation type. No animation applied.");
-    }
-  }
-
-  pauseAllAnimations() {
-    this.activeAnimations.forEach(anim => anim.pause());
-  }
-
-  resumeAllAnimations() {
-    this.activeAnimations.forEach(anim => anim.play());
-  }
-
-
-  setPlaying(playing: boolean) {
-    if (this.playing === playing) return; // Prevent redundant calls
-
-    this.playing = playing;
-    this.updateVideoElements();
-    this.updateAudioElements();
-
-    if (playing) {
-        console.log("▶️ Play button clicked");
-
-        if (this.activeAnimations.length > 0) {
-            console.log("🔄 Resuming animations...");
-            this.resumeAllAnimations();
-        } else {
-            console.log("🎬 Starting new animations...");
-            this.playSelectedSvgAnimation();
-        }
-
-        this.startedTime = Date.now();
-        this.startedTimePlay = this.currentTimeInMs;
-
-        requestAnimationFrame(() => {
-            this.playFrames();
-        });
-
-    } else {
-        console.log("⏸ Pausing animations...");
-        this.pauseAllAnimations();
-    }
 }
 
 
