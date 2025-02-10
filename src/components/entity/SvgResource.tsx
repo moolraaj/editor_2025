@@ -87,13 +87,7 @@ export const SvgResource = observer(({ svg, index }: SvgResourceProps) => {
             </div>
 
           
-            <div className="mt-5 p-4 bg-gray-900 rounded-lg flex justify-center">
-                {svgContent ? (
-                    <div dangerouslySetInnerHTML={{ __html: svgContent }} className="svg-wrapper"/>
-                ) : (
-                    <p className="text-white">Loading SVG...</p>
-                )}
-            </div>
+             
         </>
     );
 });
