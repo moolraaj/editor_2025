@@ -1,6 +1,5 @@
- 
 
- 
+
 
 export const walkingAnimations = {
     "hand-details-front": {
@@ -157,15 +156,3 @@ export const handstandAnimation = {
         origin: { x: 933.544556, y: 381.769245 },
     },
 };
-
-
-
-
-
-
- 
-
-
-
-
- 

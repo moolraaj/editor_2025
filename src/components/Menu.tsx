@@ -86,6 +86,7 @@ const MENU_OPTIONS = [
   //     store.setSelectedMenuOption("Animation");
   //   },
   // },
+
   // {
   //   name: "Effect",
   //   icon: MdMovieFilter,
@@ -93,15 +94,16 @@ const MENU_OPTIONS = [
   //     store.setSelectedMenuOption("Effect");
   //   },
   // },
-  // {
-  //   name: "Fill",
-  //   icon: MdOutlineFormatColorFill,
-  //   action: (store: Store) => {
-  //     store.setSelectedMenuOption("Fill");
-  //   },
-  // },
+  
   {
-    name: "Upload SVG",
+    name: "Fill",
+    icon: MdOutlineFormatColorFill,
+    action: (store: Store) => {
+      store.setSelectedMenuOption("Fill");
+    },
+  },
+  {
+    name: "SVG",
     icon: MdUploadFile,
     action: (store: Store) => {
       store.setSelectedMenuOption("SVG"); 

@@ -9,7 +9,7 @@ export const ExportVideoPanel = observer(() => {
   return (
     <>
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
-        Export 
+        Export
       </div>
       {/* Set max time from number input */}
       <div className="px-[16px]">
@@ -26,7 +26,7 @@ export const ExportVideoPanel = observer(() => {
           />
           <div>secs</div>
         </div>
-         
+
       </div>
       {/*  Format selection with radio button */}
       <div className="px-[16px] text-white">

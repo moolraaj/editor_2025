@@ -29,6 +29,10 @@ body {
 }
 
 
+.svg-wrapper svg {
+  width: 100%;
+}
+
 
 .overflow-scroll::-webkit-scrollbar {
   /* border:1px red solid; */

@@ -6,6 +6,10 @@ import { MenuOption, EditorElement, Animation, TimeFrame, VideoEditorElement, Au
 import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
+import { handstandAnimation, walkingAnimations } from '@/utils/animations';
+import { HANDSTAND, WALKING } from '@/utils/constants';
+
+
 
 export class Store {
   canvas: fabric.Canvas | null
@@ -33,6 +37,8 @@ export class Store {
   selectedVideoFormat: 'mp4' | 'webm';
   audioContext: AudioContext | null = null;
   audioSourceNodes: Map<string, MediaElementAudioSourceNode> = new Map();
+  private activeAnimations: anime.AnimeInstance[] = [];
+
 
 
   constructor() {
@@ -58,13 +64,13 @@ export class Store {
 
 
   assignAnimationToSelectedSvg(animationType: string) {
-  if (!this.selectedElement || this.selectedElement.type !== "svg") {
-    console.warn("No SVG selected.");
-    return;
+    if (!this.selectedElement || this.selectedElement.type !== "svg") {
+      console.warn("No SVG selected.");
+      return;
+    }
+    this.selectedElement.properties.animationType = animationType;
+    console.log(`Assigned animation: ${animationType} to ${this.selectedElement.id}`);
   }
-  this.selectedElement.properties.animationType = animationType;
-  console.log(`Assigned animation: ${animationType} to ${this.selectedElement.id}`);
-}
 
 
 
@@ -456,18 +462,157 @@ export class Store {
   }
 
 
+  applyWalkingAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
+
+    console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
+    this.activeAnimations = [];
+
+    Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
+      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+      if (!targetElement) {
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
+      }
+
+      console.log(`✅ Applying animation to ${partId}`);
+
+      const anim = anime({
+        targets: { angle: targetElement.angle || 0 },
+        angle: animationData.keys.map(k => k.v),
+        duration: 3000,
+        easing: "linear",
+        loop: true,
+        update: anim => {
+          targetElement.set("angle", Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
+        }
+      });
+
+      this.activeAnimations.push(anim);
+    });
+
+    // Move entire character forward
+    const moveAnim = anime({
+      targets: svgElement,
+      left: [
+        { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" },
+        { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" },
+        { value: svgElement.left || 0, duration: 0 }
+      ],
+      loop: true,
+      update: () => this.canvas?.renderAll()
+    });
+
+    this.activeAnimations.push(moveAnim);
+  }
+
+
+  applyHandstandAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
+
+    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
+    this.activeAnimations = [];
+
+    Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
+      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+      if (!targetElement) {
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
+      }
+
+      console.log(`✅ Applying handstand animation to ${partId}`);
+
+      const anim = anime({
+        targets: { angle: targetElement.angle || 0 },
+        angle: animationData.keys.map(k => k.v),
+        duration: 3000,
+        easing: "linear",
+        loop: true,
+        update: anim => {
+          targetElement.set("angle", Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
+        }
+      });
+
+      this.activeAnimations.push(anim);
+    });
+  }
+
+
+  playSelectedSvgAnimation() {
+    if (!this.selectedElement || this.selectedElement.type !== "svg") {
+      console.warn("⚠️ No SVG selected.");
+      return;
+    }
+
+    const animationType = this.selectedElement.properties.animationType;
+    const fabricObject = this.selectedElement.fabricObject as fabric.Group;
+
+    if (!fabricObject) {
+      console.warn("⚠️ No fabric object found for the selected SVG.");
+      return;
+    }
+
+    console.log(`🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`);
+
+    // Reset animations before starting new
+    this.activeAnimations = [];
+
+    if (animationType === WALKING) {
+      this.applyWalkingAnimation(fabricObject);
+    } else if (animationType === HANDSTAND) {
+      this.applyHandstandAnimation(fabricObject);
+    } else {
+      console.warn("⚠️ Invalid animation type. No animation applied.");
+    }
+  }
+
+  pauseAllAnimations() {
+    this.activeAnimations.forEach(anim => anim.pause());
+  }
+
+  resumeAllAnimations() {
+    this.activeAnimations.forEach(anim => anim.play());
+  }
+
+
   setPlaying(playing: boolean) {
+    if (this.playing === playing) return; // Prevent redundant calls
+
     this.playing = playing;
     this.updateVideoElements();
     this.updateAudioElements();
+
     if (playing) {
-      this.startedTime = Date.now();
-      this.startedTimePlay = this.currentTimeInMs
-      requestAnimationFrame(() => {
-        this.playFrames();
-      });
+        console.log("▶️ Play button clicked");
+
+        if (this.activeAnimations.length > 0) {
+            console.log("🔄 Resuming animations...");
+            this.resumeAllAnimations();
+        } else {
+            console.log("🎬 Starting new animations...");
+            this.playSelectedSvgAnimation();
+        }
+
+        this.startedTime = Date.now();
+        this.startedTimePlay = this.currentTimeInMs;
+
+        requestAnimationFrame(() => {
+            this.playFrames();
+        });
+
+    } else {
+        console.log("⏸ Pausing animations...");
+        this.pauseAllAnimations();
     }
-  }
+}
+
+
+
+
+
+
 
   startedTime = 0;
   startedTimePlay = 0;
@@ -585,105 +730,192 @@ export class Store {
     );
   }
 
+
+
+
+
   addSvg(index: number) {
     console.log("Adding SVG:", index);
-    const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement;
+    
+    const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement | null;
     if (!svgElement) {
       console.error("SVG Element not found:", `svg-${index}`);
       return;
     }
 
     const id = getUid();
-    
-    // Load SVG from URL
-    fabric.loadSVGFromURL(svgElement.src, (objects, options) => {
-      if (!objects || objects.length === 0) {
-        console.error("Failed to load SVG objects");
-        return;
-      }
+    const parser = new DOMParser();
+    const serializer = new XMLSerializer();
 
-      const group = fabric.util.groupSVGElements(objects, {
-        ...options,
-        left: 0,
-        top: 0,
-        scaleX: 1,
-        scaleY: 1,
-      });
+    fetch(svgElement.src)
+      .then(response => response.text())
+      .then(svgText => {
+        const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+        const svgRoot = svgDoc.documentElement;
 
-      // Calculate aspect ratio
-      const aspectRatio = group.width! / group.height! || 1;
+        if (!svgRoot.hasAttribute("xmlns")) {
+          svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        }
 
-      // Set default dimensions
-      const defaultWidth = 200;
-      const defaultHeight = defaultWidth / aspectRatio;
+        function reorderPantFrontDetails() {
+          const parentGroup = svgDoc.getElementById("pant-front-details");
+          if (!parentGroup) return;
 
-      // Create editor element
-      const editorElement: SvgEditorElement = {
-        id,
-        name: `SVG ${index + 1}`,
-        type: "svg",
-        placement: {
-          x: 0,
-          y: 0,
-          width: defaultWidth,
-          height: defaultHeight,
-          rotation: 0,
-          scaleX: 1,
-          scaleY: 1,
-        },
-        timeFrame: {
-          start: 0,
-          end: this.maxTime,
-        },
-        properties: {
-          elementId: `svg-${id}`,
-          src: svgElement.src,
-        },
-        fabricObject: group
-      };
+          const pantP2 = svgDoc.getElementById("pant-p2_00000181791082222361633450000004750754936289298353_");
+          const legFront = svgDoc.getElementById("leg-front");
+          const shoeFront = svgDoc.getElementById("shoe-front");
+          const pantP1 = svgDoc.getElementById("pant-p1_00000031922170619610477720000001442069305815377831_");
 
-      
-      if (this.canvas) {
-      
-        group.set({
-          left: editorElement.placement.x,
-          top: editorElement.placement.y,
-          scaleX: editorElement.placement.width / group.width!,
-          scaleY: editorElement.placement.height / group.height!,
-          selectable: true,
-          name: editorElement.id
-        });
+          if (pantP2 && legFront && shoeFront && pantP1) {
+            parentGroup.appendChild(pantP2);
+            parentGroup.appendChild(legFront);
+            parentGroup.appendChild(shoeFront);
+            parentGroup.appendChild(pantP1);
+          }
+        }
+        reorderPantFrontDetails();
 
-        this.canvas.add(group);
-        this.canvas.renderAll();
-        
-     
-        this.canvas.on("object:modified", (e) => {
-          if (!e.target || e.target !== group) return;
-          
-          const target = e.target;
-          const placement = editorElement.placement;
-          
-          const newPlacement = {
-            ...placement,
-            x: target.left ?? placement.x,
-            y: target.top ?? placement.y,
-            rotation: target.angle ?? placement.rotation,
-            scaleX: target.scaleX ?? placement.scaleX,
-            scaleY: target.scaleY ?? placement.scaleY
+        function reorderPantBackDetails() {
+          const parentGroup = svgDoc.getElementById("pant-back-details");
+          if (!parentGroup) return;
+
+          const pantP2 = svgDoc.getElementById("pant-p2");
+          const legBack = svgDoc.getElementById("leg-back");
+          const shoeBack = svgDoc.getElementById("shoe-back");
+          const pantP1 = svgDoc.getElementById("pant-p1");
+
+          if (pantP2 && legBack && shoeBack && pantP1) {
+            parentGroup.appendChild(pantP2);
+            parentGroup.appendChild(legBack);
+            parentGroup.appendChild(shoeBack);
+            parentGroup.appendChild(pantP1);
+          }
+        }
+        reorderPantBackDetails();
+
+        fabric.loadSVGFromString(serializer.serializeToString(svgRoot), (objects, options) => {
+          if (!objects || objects.length === 0) {
+            console.error("🚨 Failed to load SVG objects from modified SVG");
+            return;
+          }
+
+          console.log("🖌️ Fabric.js Parsed Objects (Before Grouping):", objects);
+
+          const objectMap = new Map<string, fabric.Object>();
+          objects.forEach((obj) => {
+            const fabricObj = obj as any; // Type assertion to prevent error
+            if (fabricObj.id) {
+              objectMap.set(fabricObj.id, fabricObj);
+            }
+          });
+
+          function extractAllPaths(parentG: Element): fabric.Object[] {
+            const groupObjects: fabric.Object[] = [];
+            Array.from(parentG.children).forEach((child) => {
+              if (child.nodeName === "g") {
+                const subgroupObjects = extractAllPaths(child);
+                groupObjects.push(...subgroupObjects);
+              } else if (child.nodeName === "path") {
+                const pathId = child.getAttribute("id");
+                if (pathId && objectMap.has(pathId)) {
+                  groupObjects.push(objectMap.get(pathId)!);
+                }
+              }
+            });
+            return groupObjects;
+          }
+
+          function rebuildGroupStructure(parentG: Element): fabric.Group {
+            const groupObjects: fabric.Object[] = extractAllPaths(parentG);
+            const parentId = parentG.getAttribute("id") || `group-${getUid()}`;
+
+            const group = new fabric.Group(groupObjects, {
+              name: parentId,
+              selectable: true
+            });
+
+            group.toSVG = function () {
+              const objectsSVG = this.getObjects().map(obj => obj.toSVG()).join("");
+              return `<g id="${parentId}">${objectsSVG}</g>`;
+            };
+
+            return group;
+          }
+
+          const topGElements = svgDoc.querySelectorAll(":scope > g");
+          const topLevelGroups: fabric.Group[] = [];
+
+          topGElements.forEach((gElement) => {
+            const group = rebuildGroupStructure(gElement);
+            topLevelGroups.push(group);
+          });
+
+          const fullSvgGroup = new fabric.Group(topLevelGroups, {
+            name: "full-svg",
+            selectable: true
+          });
+
+          const scaleFactor = 0.3;
+          const canvasWidth = this.canvas?.width ?? 800;
+          const canvasHeight = this.canvas?.height ?? 600;
+          const groupWidth = fullSvgGroup.width ?? 0;
+          const groupHeight = fullSvgGroup.height ?? 0;
+
+          fullSvgGroup.set({
+            left: canvasWidth / 2 - (groupWidth * scaleFactor) / 2,
+            top: canvasHeight / 2 - (groupHeight * scaleFactor) / 2,
+            scaleX: scaleFactor,
+            scaleY: scaleFactor,
+            selectable: true,
+            hasControls: true,
+          });
+
+          this.canvas?.add(fullSvgGroup);
+          this.canvas?.renderAll();
+
+          console.log("✅ SVG Added to Canvas Successfully. Canvas Objects:", this.canvas?.getObjects());
+
+          this.canvas?.getObjects().forEach((obj, index) => {
+            obj.moveTo(index);
+          });
+
+          console.log("🔍 Final Fabric.js Objects Count:", this.canvas?.getObjects().length);
+
+          const editorElement: SvgEditorElement = {
+            id,
+            name: `SVG ${index + 1}`,
+            type: "svg",
+            placement: {
+              x: fullSvgGroup.left ?? 0,
+              y: fullSvgGroup.top ?? 0,
+              width: groupWidth * scaleFactor,
+              height: groupHeight * scaleFactor,
+              rotation: 0,
+              scaleX: fullSvgGroup.scaleX ?? 1,
+              scaleY: fullSvgGroup.scaleY ?? 1,
+            },
+            timeFrame: {
+              start: 0,
+              end: this.maxTime,
+            },
+            properties: {
+              elementId: `svg-${id}`,
+              src: svgElement.src,
+            },
+            fabricObject: fullSvgGroup
           };
 
-          this.updateEditorElement({
-            ...editorElement,
-            placement: newPlacement
-          });
-        });
-      }
+          const addedSvg = fullSvgGroup.toSVG();
+          console.log("🖼️ Fabric.js Object as SVG (Final Output with Correct Hierarchy):\n", addedSvg);
 
-      this.addEditorElement(editorElement);
-      this.setSelectedElement(editorElement);
-    });
+          this.addEditorElement(editorElement);
+          this.setSelectedElement(editorElement);
+        });
+      })
+      .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
+
+
 
 
   addAudio(index: number) {
@@ -1091,18 +1323,18 @@ export class Store {
                 angle: element.placement.rotation,
                 selectable: true
               });
-    
+
               element.fabricObject = group;
               this.canvas?.add(group);
               this.canvas?.renderAll();
-    
+
               // Add modification listener
               this.canvas?.on("object:modified", (e) => {
                 if (!e.target || e.target !== group) return;
-                
+
                 const target = e.target;
                 const placement = element.placement;
-                
+
                 const newPlacement = {
                   ...placement,
                   x: target.left ?? placement.x,
@@ -1111,7 +1343,7 @@ export class Store {
                   scaleX: target.scaleX ?? placement.scaleX,
                   scaleY: target.scaleY ?? placement.scaleY
                 };
-    
+
                 this.updateEditorElement({
                   ...element,
                   placement: newPlacement

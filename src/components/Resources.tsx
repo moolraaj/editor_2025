@@ -25,7 +25,7 @@ export const Resources = observer(() => {
       {selectedMenuOption === "Effect" ? <EffectsPanel /> : null}
       {selectedMenuOption === "Export" ? <ExportVideoPanel /> : null}
       {selectedMenuOption === "Fill" ? <FillPanel /> : null}
-      {selectedMenuOption === "SVG" && <SvgResourcesPanel />}
+      {selectedMenuOption === "SVG" ? <SvgResourcesPanel /> : null}
     </div>
   );
 });

@@ -39,7 +39,10 @@ export const ImageResource = observer(
           width={200}
           id={`image-${index}`}
         ></img>
+
+
       </div>
+
     );
   }
 );
