@@ -7,7 +7,6 @@ export const ScaleRangeInput: React.FC<ScaleRangeInputProps> = (props) => {
     const refIsMouseDown = useRef(false);
     const [canvasSize, setCanvasSize] = useState({ width: 50, height: props.height });
     useEffect(() => {
-        // update canvas size based on container size
         const handleResize = () => {
             if (ref.current) {
                 setCanvasSize({
@@ -55,6 +54,7 @@ export const ScaleRangeInput: React.FC<ScaleRangeInputProps> = (props) => {
         }
     };
     return <div
+        style={{ marginTop: '30px' }}
         className="relative w-full"
         onMouseDown={(e) => {
             refIsMouseDown.current = true;
@@ -76,13 +76,22 @@ export const ScaleRangeInput: React.FC<ScaleRangeInputProps> = (props) => {
             height={props.height}
             ref={ref}></canvas>
         <div
-            className="rounded-full bg-black w-[4px] absolute top-0 left-0"
+            className="rounded-full bg-black w-[4px] absolute top-0 left-0 "
+            id='ruler_scale_drag'
             style={{
                 height: `${props.height}px`,
                 transform: `translateX(${value / max * canvasSize.width}px) translateX(-2px)`
             }}
         >
 
+        </div>
+
+        <div className="absolute top-[-22px] left-0 w-full flex justify-between text-xs text-white">
+            {Array.from({ length: Math.floor(max / 1000) + 1 }).map((_, index) => (
+                <span key={index} style={{ fontSize: '10px', position: "absolute", left: `${(index * 1000) / max * 100}%`, transform: "translateX(-50%)" }}>
+                    {index}
+                </span>
+            ))}
         </div>
 
     </div>;

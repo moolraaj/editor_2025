@@ -7,7 +7,7 @@ import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
 import { handstandAnimation, walkingAnimations } from '@/utils/animations';
-import { HANDSTAND, WALKING } from '@/utils/constants';
+import { HANDSTAND, reorderPantBackDetails, reorderPantFrontDetails, WALKING } from '@/utils/constants';
 
 
 
@@ -460,127 +460,127 @@ export class Store {
   setMaxTime(maxTime: number) {
     this.maxTime = maxTime;
   }
-  
 
 
-applyWalkingAnimation(svgElement: fabric.Group) {
-  if (!svgElement) return;
 
-  console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
-  console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+  applyWalkingAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
 
-  // Apply per-part animations based on walkingAnimations
-  Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
+    console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
+    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+
+    // Apply per-part animations based on walkingAnimations
+    Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
       const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
 
       if (!targetElement) {
-          console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
-          return;
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
       }
 
       console.log(`✅ Found SVG part: ${partId}, applying animation`);
 
       anime({
-          targets: { angle: targetElement.angle || 0 },
-          angle: animationData.keys.map(k => k.v),
-          duration: 3000,
-          easing: "linear",
-          loop: true,
-          update: (anim) => {
-              targetElement.set("angle", Number(anim.animations[0].currentValue)); 
-              this.canvas?.renderAll(); 
-          }
+        targets: { angle: targetElement.angle || 0 },
+        angle: animationData.keys.map(k => k.v),
+        duration: 3000,
+        easing: "linear",
+        loop: true,
+        update: (anim) => {
+          targetElement.set("angle", Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
+        }
       });
-  });
+    });
 
-  // ✅ Move the entire character forward, stop, then restart
-  anime({
+    // ✅ Move the entire character forward, stop, then restart
+    anime({
       targets: svgElement,
       left: [
-          { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" }, // Move forward
-          { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" }, // Pause
-          { value: svgElement.left || 0, duration: 0 } // Reset instantly
+        { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" }, // Move forward
+        { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" }, // Pause
+        { value: svgElement.left || 0, duration: 0 } // Reset instantly
       ],
-      loop: true,  
+      loop: true,
       update: () => {
-          this.canvas?.renderAll();
+        this.canvas?.renderAll();
       }
-  });
-}
+    });
+  }
 
-applyHandstandAnimation(svgElement: fabric.Group) {
-  if (!svgElement) return;
+  applyHandstandAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
 
-  console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
-  console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
+    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
 
-  Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
-    const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+    Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
+      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
 
-    if (!targetElement) {
-      console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+      if (!targetElement) {
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
+      }
+
+      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+
+      anime({
+        targets: { angle: targetElement.angle || 0 }, // Store rotation separately
+        angle: animationData.keys.map(k => k.v), // Use animation key values
+        duration: 3000,
+        easing: "linear",
+        loop: true,
+        update: (anim) => {
+          targetElement.set("angle", Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll(); // Force Fabric.js to redraw
+          console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
+        },
+        complete: () => {
+          console.log(`✅ Handstand animation completed for ${partId}.`);
+        }
+      });
+    });
+  }
+
+  playSelectedSvgAnimation() {
+    if (!this.selectedElement || this.selectedElement.type !== "svg") {
+      console.warn("⚠️ No SVG selected or invalid selection.");
       return;
     }
 
-    console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+    const animationType = this.selectedElement.properties.animationType;
+    const fabricObject = this.selectedElement.fabricObject as fabric.Group;
 
-    anime({
-      targets: { angle: targetElement.angle || 0 }, // Store rotation separately
-      angle: animationData.keys.map(k => k.v), // Use animation key values
-      duration: 3000,
-      easing: "linear",
-      loop: true,
-      update: (anim) => {
-        targetElement.set("angle", Number(anim.animations[0].currentValue));
-        this.canvas?.renderAll(); // Force Fabric.js to redraw
-        console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
-      },
-      complete: () => {
-        console.log(`✅ Handstand animation completed for ${partId}.`);
-      }
-    });
-  });
-}
+    if (!fabricObject) {
+      console.warn("⚠️ No fabric object found for the selected SVG.");
+      return;
+    }
 
-playSelectedSvgAnimation() {
-  if (!this.selectedElement || this.selectedElement.type !== "svg") {
-    console.warn("⚠️ No SVG selected or invalid selection.");
-    return;
+    console.log(`🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`);
+
+    if (animationType === WALKING) {
+      this.applyWalkingAnimation(fabricObject);
+    } else if (animationType === HANDSTAND) {
+      this.applyHandstandAnimation(fabricObject);
+    } else {
+      console.warn("⚠️ Invalid animation type. No animation applied.");
+    }
   }
 
-  const animationType = this.selectedElement.properties.animationType;
-  const fabricObject = this.selectedElement.fabricObject as fabric.Group;
+  setPlaying(playing: boolean) {
+    this.playing = playing;
+    this.updateVideoElements();
+    this.updateAudioElements();
+    if (playing) {
+      this.playSelectedSvgAnimation();
 
-  if (!fabricObject) {
-    console.warn("⚠️ No fabric object found for the selected SVG.");
-    return;
+      this.startedTime = Date.now();
+      this.startedTimePlay = this.currentTimeInMs;
+      requestAnimationFrame(() => {
+        this.playFrames();
+      });
+    }
   }
-
-  console.log(`🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`);
-
-  if (animationType === WALKING) {
-    this.applyWalkingAnimation(fabricObject);
-  } else if (animationType === HANDSTAND) {
-    this.applyHandstandAnimation(fabricObject);
-  } else {
-    console.warn("⚠️ Invalid animation type. No animation applied.");
-  }
-}
-
-setPlaying(playing: boolean) {
-  this.playing = playing;
-  this.updateVideoElements();
-  this.updateAudioElements();
-  if (playing) {
-    this.playSelectedSvgAnimation();
-
-    this.startedTime = Date.now();
-    this.startedTimePlay = this.currentTimeInMs;
-    requestAnimationFrame(() => {
-      this.playFrames();
-    });
-  }
-}
 
 
 
@@ -708,6 +708,7 @@ setPlaying(playing: boolean) {
 
 
 
+ 
   addSvg(index: number) {
     console.log("Adding SVG:", index);
     
@@ -888,6 +889,12 @@ setPlaying(playing: boolean) {
       })
       .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
+
+  
+
+ 
+
+
 
 
 
@@ -1330,6 +1337,9 @@ setPlaying(playing: boolean) {
           break;
         }
 
+        
+        
+
         case "text": {
           const textObject = new fabric.Textbox(element.properties.text, {
             name: element.id,
@@ -1454,3 +1464,6 @@ function getTextObjectsPartitionedByCharacters(textObject: fabric.Text, element:
   }
   return copyCharsObjects;
 }
+ 
+
+

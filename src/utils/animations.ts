@@ -1,6 +1,3 @@
-
-
-
 export const walkingAnimations = {
     "hand-details-front": {
         keys: [
