@@ -68,23 +68,37 @@ export class Store {
       console.warn("⚠️ No layer selected for copying.");
       return;
     }
+
     if (this.copiedElement) {
       console.warn("⚠️ Already copied a layer. Paste before copying again.");
       return;
     }
+
     this.selectedElement.fabricObject?.clone((cloned: fabric.Object) => {
-      if (!cloned) return;
+      if (!cloned) {
+        console.error("🚨 Failed to clone fabric object!");
+        return;
+      }
+
+  
+      cloned.set({
+        left: this.selectedElement?.placement.x,
+        top: this.selectedElement?.placement.y,
+        selectable: true,
+        evented: true,
+      });
 
       this.copiedElement = {
         ...this.selectedElement,
-        id: getUid(), 
+        id: getUid(),  
         name: `Layer (${this.selectedElement?.id})`,
-        fabricObject: cloned, 
+        fabricObject: cloned,  
       } as EditorElement;
-      console.log("✅ Copied Layer:", this.copiedElement.name);
 
+      console.log("✅ Copied Layer:", this.copiedElement.name);
     });
   }
+
 
 
   pasteElement() {
@@ -92,35 +106,46 @@ export class Store {
       console.warn("⚠️ No copied layer! Copy one first.");
       return;
     }
+
     const elementToPaste = { ...this.copiedElement };
-    this.copiedElement.fabricObject?.clone((cloned: fabric.Object) => {
-      if (!cloned) {
-        console.error("❌ Failed to clone Fabric.js object.");
-        return;
-      }
-      const pastedElement = {
-        ...elementToPaste, 
-        id: getUid(),  
-        name: elementToPaste.name,
-        placement: {
-          ...elementToPaste.placement,
-          x: elementToPaste.placement.x + 50,  
-          y: elementToPaste.placement.y + 20,
-        },
-        fabricObject: cloned,
-      };
-      this.addEditorElement(pastedElement);
-      this.setSelectedElement(pastedElement);
-      this.copiedElement = null;
-      this.canvas?.add(cloned);
-      this.canvas?.renderAll();
-    });
+    this.copiedElement = null;
+
+
+    if (elementToPaste) {
+
+
+
+
+      elementToPaste.fabricObject?.clone((cloned: fabric.Object) => {
+        if (!cloned) {
+          console.error("❌ Failed to clone Fabric.js object.");
+          return;
+        }
+
+
+        const newElement = {
+          ...elementToPaste,
+          id: getUid(),
+          name: `${elementToPaste.name}`,
+          placement: {
+            ...elementToPaste.placement,
+            x: elementToPaste.placement.x + 50,
+            y: elementToPaste.placement.y + 20,
+          },
+          timeFrame: { start: elementToPaste.timeFrame.start, end: elementToPaste.timeFrame.end },
+          fabricObject: cloned,
+        } as EditorElement;
+
+        this.addEditorElement(newElement);
+        this.canvas?.add(cloned);
+        this.canvas?.renderAll();
+
+        console.log("✅ Pasted Full Layer:", newElement.name);
+      });
+    } else {
+      console.warn("⚠️ Frame too small to paste!");
+    }
   }
-
-
-
-
-
 
   deleteElement() {
     if (!this.selectedElement) {
