@@ -34,6 +34,35 @@ body {
 }
 
 
+.button_l_w {
+  color: #fff;
+  z-index: 9999;
+  position: absolute;
+  top: 25px;
+  right: 0;
+}
+
+.layers_w {
+  position: absolute;
+  top: 19px;
+  background: rgb(30 41 59);
+  padding: 10px;
+  border: 1px solid #ffffff36;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  right: 42px;
+  z-index: 9;
+  
+}
+
+.layers_w button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
 .overflow-scroll::-webkit-scrollbar {
   /* border:1px red solid; */
   background-color: rgb(30, 41, 59);

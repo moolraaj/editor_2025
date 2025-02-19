@@ -27,6 +27,11 @@
     "eslint": "8.44.0",
     "eslint-config-next": "15.1.6",
     "fabric": "^5.3.0",
+    "gif.js": "^0.2.0",
+    "gifshot": "^0.4.5",
+    "gifuct-js": "^2.1.2",
+    "gsap": "^3.12.7",
+    "html2canvas": "^1.4.1",
     "mobx": "^6.9.0",
     "mobx-react": "^7.6.0",
     "mobx-react-lite": "^4.1.0",
@@ -34,13 +39,17 @@
     "postcss": "8.4.25",
     "react": "19.0.0",
     "react-color": "^2.19.3",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "19.0.0",
+    "react-dropzone": "^14.3.5",
     "react-icons": "^4.10.1",
     "tailwindcss": "3.3.2",
     "typescript": "5.1.6"
   },
   "devDependencies": {
     "@types/animejs": "^3.1.7",
+    "@types/gif.js": "^0.2.5",
     "@types/react-color": "^3.0.6"
   },
   "overrides": {

@@ -37,8 +37,7 @@ export class Store {
   selectedVideoFormat: 'mp4' | 'webm';
   audioContext: AudioContext | null = null;
   audioSourceNodes: Map<string, MediaElementAudioSourceNode> = new Map();
-  private activeAnimations: anime.AnimeInstance[] = [];
-
+  copiedElement: EditorElement | null = null;
 
 
   constructor() {
@@ -60,6 +59,148 @@ export class Store {
     this.selectedVideoFormat = 'mp4';
     makeAutoObservable(this);
   }
+
+
+
+
+  copyElement() {
+    if (!this.selectedElement) {
+      console.warn("⚠️ No layer selected for copying.");
+      return;
+    }
+    if (this.copiedElement) {
+      console.warn("⚠️ Already copied a layer. Paste before copying again.");
+      return;
+    }
+    this.selectedElement.fabricObject?.clone((cloned: fabric.Object) => {
+      if (!cloned) return;
+
+      this.copiedElement = {
+        ...this.selectedElement,
+        id: getUid(), 
+        name: `Layer (${this.selectedElement?.id})`,
+        fabricObject: cloned, 
+      } as EditorElement;
+      console.log("✅ Copied Layer:", this.copiedElement.name);
+
+    });
+  }
+
+
+  pasteElement() {
+    if (!this.copiedElement) {
+      console.warn("⚠️ No copied layer! Copy one first.");
+      return;
+    }
+    const elementToPaste = { ...this.copiedElement };
+    this.copiedElement.fabricObject?.clone((cloned: fabric.Object) => {
+      if (!cloned) {
+        console.error("❌ Failed to clone Fabric.js object.");
+        return;
+      }
+      const pastedElement = {
+        ...elementToPaste, 
+        id: getUid(),  
+        name: elementToPaste.name,
+        placement: {
+          ...elementToPaste.placement,
+          x: elementToPaste.placement.x + 50,  
+          y: elementToPaste.placement.y + 20,
+        },
+        fabricObject: cloned,
+      };
+      this.addEditorElement(pastedElement);
+      this.setSelectedElement(pastedElement);
+      this.copiedElement = null;
+      this.canvas?.add(cloned);
+      this.canvas?.renderAll();
+    });
+  }
+
+
+
+
+
+
+  deleteElement() {
+    if (!this.selectedElement) {
+      console.warn("⚠️ No layer selected to delete.");
+      return;
+    }
+    const elementToDelete = this.selectedElement;
+    this.removeEditorElement(elementToDelete.id);
+    if (elementToDelete.fabricObject) {
+      this.canvas?.remove(elementToDelete.fabricObject);
+    }
+    this.setSelectedElement(null);
+    this.canvas?.discardActiveObject();
+    this.canvas?.renderAll();
+    this.refreshElements()
+  }
+
+
+  splitElement() {
+
+    if (!this.selectedElement || this.selectedElement.type === "audio") {
+      console.warn("⚠️ Cannot split audio layers.");
+      return;
+    }
+    const selectedElement = this.selectedElement;
+    const { start, end } = selectedElement.timeFrame;
+    const totalDuration = end - start;
+
+    if (totalDuration < 2000) {
+      console.warn("⚠️ Frame too small to split!");
+      return;
+    }
+    const midTime = Math.floor((start + end) / 2);
+    this.updateEditorElementTimeFrame(selectedElement, { end: midTime });
+    selectedElement.fabricObject?.clone((cloned: fabric.Object) => {
+      if (!cloned) {
+        console.error("❌ Failed to clone Fabric.js object.");
+        return;
+      }
+      const newElement = {
+        ...selectedElement,
+        id: getUid(),
+        name: `Layer (${selectedElement.id})`,
+        type: selectedElement.type,
+        placement: {
+          ...selectedElement.placement,
+          x: selectedElement.placement.x + 50,
+          y: selectedElement.placement.y + 20,
+        },
+        timeFrame: { start: midTime, end: end },
+        properties: { ...selectedElement.properties },
+        fabricObject: cloned,
+      } as EditorElement;
+      this.addEditorElement(newElement);
+      this.canvas?.add(cloned);
+      this.canvas?.renderAll();
+      this.refreshElements();
+    });
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,7 +350,9 @@ export class Store {
   }
 
   addSvgResource(svg: string) {
-    this.svgs = [...this.svgs, svg];
+    // this.svgs = [...this.svgs, svg];
+    this.svgs.push(svg);
+
   }
 
   addAnimation(animation: Animation) {
@@ -705,13 +848,28 @@ export class Store {
   }
 
 
+  //   addGifToCanvas(gifUrl: string) {
+  //     if (!this.canvas) return;
+
+  //     fabric.Image.fromURL(gifUrl, (img) => {
+  //         img.set({
+
+  //             selectable: true,
+  //             hasControls: true
+  //         });
+
+  //         this.canvas?.add(img);
+  //         this.canvas?.renderAll();
+  //     });
+  // }
 
 
 
- 
+
+
   addSvg(index: number) {
     console.log("Adding SVG:", index);
-    
+
     const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement | null;
     if (!svgElement) {
       console.error("SVG Element not found:", `svg-${index}`);
@@ -732,41 +890,7 @@ export class Store {
           svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         }
 
-        function reorderPantFrontDetails() {
-          const parentGroup = svgDoc.getElementById("pant-front-details");
-          if (!parentGroup) return;
 
-          const pantP2 = svgDoc.getElementById("pant-p2_00000181791082222361633450000004750754936289298353_");
-          const legFront = svgDoc.getElementById("leg-front");
-          const shoeFront = svgDoc.getElementById("shoe-front");
-          const pantP1 = svgDoc.getElementById("pant-p1_00000031922170619610477720000001442069305815377831_");
-
-          if (pantP2 && legFront && shoeFront && pantP1) {
-            parentGroup.appendChild(pantP2);
-            parentGroup.appendChild(legFront);
-            parentGroup.appendChild(shoeFront);
-            parentGroup.appendChild(pantP1);
-          }
-        }
-        reorderPantFrontDetails();
-
-        function reorderPantBackDetails() {
-          const parentGroup = svgDoc.getElementById("pant-back-details");
-          if (!parentGroup) return;
-
-          const pantP2 = svgDoc.getElementById("pant-p2");
-          const legBack = svgDoc.getElementById("leg-back");
-          const shoeBack = svgDoc.getElementById("shoe-back");
-          const pantP1 = svgDoc.getElementById("pant-p1");
-
-          if (pantP2 && legBack && shoeBack && pantP1) {
-            parentGroup.appendChild(pantP2);
-            parentGroup.appendChild(legBack);
-            parentGroup.appendChild(shoeBack);
-            parentGroup.appendChild(pantP1);
-          }
-        }
-        reorderPantBackDetails();
 
         fabric.loadSVGFromString(serializer.serializeToString(svgRoot), (objects, options) => {
           if (!objects || objects.length === 0) {
@@ -890,9 +1014,9 @@ export class Store {
       .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
 
-  
 
- 
+
+
 
 
 
@@ -1337,8 +1461,8 @@ export class Store {
           break;
         }
 
-        
-        
+
+
 
         case "text": {
           const textObject = new fabric.Textbox(element.properties.text, {
@@ -1464,6 +1588,6 @@ function getTextObjectsPartitionedByCharacters(textObject: fabric.Text, element:
   }
   return copyCharsObjects;
 }
- 
+
 
 

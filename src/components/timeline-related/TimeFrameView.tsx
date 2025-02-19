@@ -1,9 +1,10 @@
-"use client";
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { EditorElement } from "@/types";
 import { StoreContext } from "@/store";
 import { observer } from "mobx-react-lite";
 import DragableView from "./DragableView";
+import { colorMap } from "@/utils/animations";
+import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
 
 export const TimeFrameView = observer((props: { element: EditorElement }) => {
   const store = React.useContext(StoreContext);
@@ -11,14 +12,27 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
   const disabled = element.type === "audio";
   const isSelected = store.selectedElement?.id === element.id;
 
-  // Map each element type to an exact CSS color.
-  const colorMap: Record<string, string> = {
-    text:"rgba(255, 166, 0, 0.8)",
-    audio:"rgba(238, 130, 238, 0.79)",
-    svg:"rgba(135, 207, 235, 0.72)",
-    video:"rgba(144, 238, 144, 0.73)",
-    image:"rgba(255, 182, 193, 0.78)",
-  };
+  const [isShow, setIsShow] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null); // Reference to the dropdown
+
+  // Handle click outside to close the dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsShow(false);
+      }
+    };
+
+    if (isShow) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isShow]);
 
   const layerColor = colorMap[element.type] || "gray";
   const disabledCursor = disabled ? "cursor-no-drop" : "cursor-ew-resize";
@@ -27,9 +41,9 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
     <div
       onClick={() => store.setSelectedElement(element)}
       key={element.id}
-      className="relative w-full h-[25px] my-2"
+      className="relative w-full h-[25px] my-2 flex items-center"
+      id="timeline_l_w"
     >
-   
       <DragableView
         className="z-10"
         value={element.timeFrame.start}
@@ -44,15 +58,13 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         ></div>
       </DragableView>
 
-      
       <DragableView
         className={disabled ? "cursor-no-drop" : "cursor-col-resize"}
         value={element.timeFrame.start}
         disabled={disabled}
         style={{
-          width: `${
-            ((element.timeFrame.end - element.timeFrame.start) / store.maxTime) * 100
-          }%`,
+          width: `${((element.timeFrame.end - element.timeFrame.start) / store.maxTime) * 100}%`,
+          backgroundColor: layerColor,
         }}
         total={store.maxTime}
         onChange={(value) => {
@@ -63,19 +75,40 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
           });
         }}
       >
-        <div
-          style={{
-            backgroundColor: layerColor,
-            border: isSelected ? "2px solid #80808078" : "none",
-       
-          }}
-          className="h-full w-full text-white text-xs min-w-[0px] px-2 py-1.25 leading-[25px]"
-        >
+        <div className="h-full w-full text-white text-xs min-w-[0px] px-2 py-1.25 leading-[25px] text-center">
           {element.name}
+
+          <div className="button_l_w">
+            {/* Button to toggle dropdown */}
+            <button onClick={() => setIsShow(!isShow)}>
+              <FaEllipsisV />
+            </button>
+          </div>
+
+          {/* Dropdown */}
+          {isShow && (
+            <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => { store.copyElement(); setIsShow(false); }}>
+                <FaCopy className="text-blue-500" />
+                Copy
+              </button>
+              <button onClick={() => { store.pasteElement(); setIsShow(false); }}>
+                <FaPaste className="text-green-500" />
+                Paste
+              </button>
+              <button onClick={() => { store.deleteElement(); setIsShow(false); }}>
+                <FaTrash className="text-red-500" />
+                Delete
+              </button>
+              <button onClick={() => { store.splitElement(); setIsShow(false); }}>
+                <FaCut className="text-red-500" />
+                Split
+              </button>
+            </div>
+          )}
         </div>
       </DragableView>
 
-      
       <DragableView
         className="z-10"
         disabled={disabled}

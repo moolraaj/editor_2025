@@ -153,3 +153,15 @@ export const handstandAnimation = {
         origin: { x: 933.544556, y: 381.769245 },
     },
 };
+
+
+export const colorMap: Record<string, string> = {
+    text: "rgba(255, 166, 0, 0.8)",
+    audio: "rgba(238, 130, 238, 0.79)",
+    svg: "rgba(135, 207, 235, 0.72)",
+    video: "rgba(144, 238, 144, 0.73)",
+    image: "rgba(255, 182, 193, 0.78)",
+  };
+
+
+ 
