@@ -12,43 +12,39 @@ export const TimeLine = observer(() => {
 
   const percentOfCurrentTime = (store.currentTimeInMs / store.maxTime) * 100;
 
+  
   const handleDragStart = (index: number) => {
-    setDraggedElementIndex(index);  // Store dragged element index
+    setDraggedElementIndex(index);  
   };
 
+ 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    setHoveredElementIndex(index);  // Set hovered element index
+    setHoveredElementIndex(index);  
   };
 
+  
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedElementIndex === null || hoveredElementIndex === null) return;
 
     if (draggedElementIndex !== hoveredElementIndex) {
-      store.moveElement(draggedElementIndex, hoveredElementIndex);  // Move element in state
-      store.reorderFabricObjects(draggedElementIndex, hoveredElementIndex);  // Reorder on the canvas
+      store.moveElement(draggedElementIndex, hoveredElementIndex);  
+      store.reorderFabricObjects(draggedElementIndex, hoveredElementIndex);  
     }
 
-    // Clear dragged and hovered element index after drop
     setDraggedElementIndex(null);  
     setHoveredElementIndex(null);  
   };
 
-  // Handle drag end
-  const handleDragEnd = (index: number) => {
-    // Clear dragged element index once drag ends
-    setDraggedElementIndex(null);
-  };
-
   return (
     <div className="flex flex-col">
-      <SeekPlayer />
+      <SeekPlayer/>
       <div
         className="flex-1 relative"
         ref={timelineRef}
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}  // Allow dragging over the timeline
+        onDragOver={(e) => e.preventDefault()}  
       >
         {store.editorElements.map((element, index) => (
           <TimeFrameView
@@ -57,7 +53,6 @@ export const TimeLine = observer(() => {
             index={index}
             onDragStart={handleDragStart}  
             onDragOver={(e) => handleDragOver(e, index)}  
-            onDragEnd={handleDragEnd}  // Call handleDragEnd to clear dragging
             isDragged={draggedElementIndex === index}  
             isHovered={hoveredElementIndex === index}  
           />
