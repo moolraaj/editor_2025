@@ -6,16 +6,16 @@ import DragableView from "./DragableView";
 import { colorMap } from "@/utils/animations";
 import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
 
-export const TimeFrameView = observer((props: { element: EditorElement }) => {
+export const TimeFrameView = observer((props: { element: EditorElement, onDragStart: (index: number) => void, onDragOver: (e: React.DragEvent, index: number) => void, isDragged: boolean, isHovered: boolean, index: number }) => {
   const store = React.useContext(StoreContext);
-  const { element } = props;
+  const { element, onDragStart, onDragOver, isDragged, isHovered, index } = props;
   const disabled = element.type === "audio";
-  const isSelected = store.selectedElement?.id === element.id;
+
 
   const [isShow, setIsShow] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null); // Reference to the dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Handle click outside to close the dropdown
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -44,6 +44,9 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
       className="relative w-full h-[25px] my-2 flex items-center"
       id="timeline_l_w"
     >
+
+
+
       <DragableView
         className="z-10"
         value={element.timeFrame.start}
@@ -78,14 +81,21 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         <div className="h-full w-full text-white text-xs min-w-[0px] px-2 py-1.25 leading-[25px] text-center">
           {element.name}
 
+          <div
+            className={`drag_w ${isHovered ? "bg-[rgb(185 28 28)]" : ""}`}
+            draggable
+            onDragStart={() => onDragStart(index)}
+            onDragOver={(e) => onDragOver(e, index)}
+            style={{ cursor: isDragged ? "grabbing" : "" }}
+          >
+          </div>
+
           <div className="button_l_w">
-            {/* Button to toggle dropdown */}
             <button onClick={() => setIsShow(!isShow)}>
               <FaEllipsisV />
             </button>
           </div>
 
-          {/* Dropdown */}
           {isShow && (
             <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => { store.copyElement(); setIsShow(false); }}>

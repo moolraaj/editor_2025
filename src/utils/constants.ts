@@ -32,7 +32,11 @@ export const HANDSTAND:string='handstand'
 
 
 
-export const  reorderPantFrontDetails=(svgDoc: XMLDocument)=> {
+// Function to reorder Pant Front details
+export const reorderPantFrontDetails = (svgText: string) => {
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgText, "image/svg+xml"); // Parse the string into an XMLDocument
+
   const parentGroup = svgDoc.getElementById("pant-front-details");
   if (!parentGroup) return;
 
@@ -42,15 +46,18 @@ export const  reorderPantFrontDetails=(svgDoc: XMLDocument)=> {
   const pantP1 = svgDoc.getElementById("pant-p1_00000031922170619610477720000001442069305815377831_");
 
   if (pantP2 && legFront && shoeFront && pantP1) {
-      parentGroup.appendChild(pantP2);
-      parentGroup.appendChild(legFront);
-      parentGroup.appendChild(shoeFront);
-      parentGroup.appendChild(pantP1);
+    parentGroup.appendChild(pantP2);
+    parentGroup.appendChild(legFront);
+    parentGroup.appendChild(shoeFront);
+    parentGroup.appendChild(pantP1);
   }
 }
 
+// Function to reorder Pant Back details
+export const reorderPantBackDetails = (svgText: string) => {
+  const parser = new DOMParser();
+  const svgDoc = parser.parseFromString(svgText, "image/svg+xml"); // Parse the string into an XMLDocument
 
-export const  reorderPantBackDetails=(svgDoc: XMLDocument)=> {
   const parentGroup = svgDoc.getElementById("pant-back-details");
   if (!parentGroup) return;
 
@@ -60,9 +67,9 @@ export const  reorderPantBackDetails=(svgDoc: XMLDocument)=> {
   const pantP1 = svgDoc.getElementById("pant-p1");
 
   if (pantP2 && legBack && shoeBack && pantP1) {
-      parentGroup.appendChild(pantP2);
-      parentGroup.appendChild(legBack);
-      parentGroup.appendChild(shoeBack);
-      parentGroup.appendChild(pantP1);
+    parentGroup.appendChild(pantP2);
+    parentGroup.appendChild(legBack);
+    parentGroup.appendChild(shoeBack);
+    parentGroup.appendChild(pantP1);
   }
 }

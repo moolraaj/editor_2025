@@ -63,6 +63,51 @@ export class Store {
 
 
 
+  moveElement(draggedIndex: number, hoveredIndex: number) {
+    const updatedElements = [...this.editorElements];
+    const [draggedElement] = updatedElements.splice(draggedIndex, 1);
+    updatedElements.splice(hoveredIndex, 0, draggedElement);
+
+    this.setEditorElements(updatedElements);
+  }
+
+
+  reorderFabricObjects(draggedIndex: number, hoveredIndex: number) {
+    const draggedElement = this.editorElements[draggedIndex];
+    const hoveredElement = this.editorElements[hoveredIndex];
+    const draggedFabricObject = draggedElement.fabricObject;
+    const hoveredFabricObject = hoveredElement.fabricObject;
+    if (draggedFabricObject && hoveredFabricObject) {
+      const draggedIndexOnCanvas = this.canvas?.getObjects().indexOf(draggedFabricObject);
+      const hoveredIndexOnCanvas = this.canvas?.getObjects().indexOf(hoveredFabricObject);
+      if (draggedIndexOnCanvas !== undefined && hoveredIndexOnCanvas !== undefined) {
+        if (draggedIndex < hoveredIndex) {
+          draggedFabricObject.moveTo(hoveredIndexOnCanvas + 1);
+        } else {
+          draggedFabricObject.moveTo(hoveredIndexOnCanvas);
+        }
+        this.canvas?.renderAll();
+      } else {
+        console.error("Error: Could not find valid indices for dragged or hovered objects.");
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   copyElement() {
     if (!this.selectedElement) {
       console.warn("⚠️ No layer selected for copying.");
@@ -80,7 +125,7 @@ export class Store {
         return;
       }
 
-  
+
       cloned.set({
         left: this.selectedElement?.placement.x,
         top: this.selectedElement?.placement.y,
@@ -90,9 +135,9 @@ export class Store {
 
       this.copiedElement = {
         ...this.selectedElement,
-        id: getUid(),  
+        id: getUid(),
         name: `Layer (${this.selectedElement?.id})`,
-        fabricObject: cloned,  
+        fabricObject: cloned,
       } as EditorElement;
 
       console.log("✅ Copied Layer:", this.copiedElement.name);
@@ -213,22 +258,6 @@ export class Store {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   assignAnimationToSelectedSvg(animationType: string) {
     if (!this.selectedElement || this.selectedElement.type !== "svg") {
       console.warn("No SVG selected.");
@@ -237,12 +266,6 @@ export class Store {
     this.selectedElement.properties.animationType = animationType;
     console.log(`Assigned animation: ${animationType} to ${this.selectedElement.id}`);
   }
-
-
-
-
-
-
 
 
 
@@ -307,24 +330,6 @@ export class Store {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   get currentTimeInMs() {
     return this.currentKeyFrame * 1000 / this.fps;
   }
@@ -375,8 +380,8 @@ export class Store {
   }
 
   addSvgResource(svg: string) {
-    // this.svgs = [...this.svgs, svg];
-    this.svgs.push(svg);
+    this.svgs = [...this.svgs, svg];
+    // this.svgs.push(svg);
 
   }
 
@@ -873,20 +878,7 @@ export class Store {
   }
 
 
-  //   addGifToCanvas(gifUrl: string) {
-  //     if (!this.canvas) return;
-
-  //     fabric.Image.fromURL(gifUrl, (img) => {
-  //         img.set({
-
-  //             selectable: true,
-  //             hasControls: true
-  //         });
-
-  //         this.canvas?.add(img);
-  //         this.canvas?.renderAll();
-  //     });
-  // }
+ 
 
 
 
