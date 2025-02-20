@@ -82,7 +82,7 @@ export const TimeFrameView = observer((props: { element: EditorElement, onDragSt
           {element.name}
 
           <div
-            className={`drag_w ${isHovered ? "bg-[rgb(185 28 28)]" : ""}`}
+            className={`drag_w ${isHovered ? "bg-[#b91c1c99] text-white" : ""}`}
             draggable
             onDragStart={() => onDragStart(index)}
             onDragOver={(e) => onDragOver(e, index)}
