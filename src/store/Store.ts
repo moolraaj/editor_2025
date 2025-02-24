@@ -1,13 +1,13 @@
 import { makeAutoObservable } from 'mobx';
 import { fabric } from 'fabric';
 import { getUid, isHtmlAudioElement, isHtmlImageElement, isHtmlVideoElement } from '@/utils';
-import anime, { get } from 'animejs';
+import anime from 'animejs';
 import { MenuOption, EditorElement, Animation, TimeFrame, VideoEditorElement, AudioEditorElement, Placement, ImageEditorElement, Effect, TextEditorElement, SvgEditorElement } from '../types';
 import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
 import { handstandAnimation, walkingAnimations } from '@/utils/animations';
-import { HANDSTAND, reorderPantBackDetails, reorderPantFrontDetails, WALKING } from '@/utils/constants';
+import { HANDSTAND, WALKING } from '@/utils/constants';
 
 
 
@@ -38,6 +38,8 @@ export class Store {
   audioContext: AudioContext | null = null;
   audioSourceNodes: Map<string, MediaElementAudioSourceNode> = new Map();
   copiedElement: EditorElement | null = null;
+  currentAnimations: anime.AnimeInstance[] = [];
+
 
 
   constructor() {
@@ -47,7 +49,7 @@ export class Store {
     this.svgs = [];
     this.audios = [];
     this.editorElements = [];
-    this.backgroundColor = '#111111';
+    this.backgroundColor = '#404040';
     this.maxTime = 30 * 1000;
     this.playing = false;
     this.currentKeyFrame = 0;
@@ -639,21 +641,22 @@ export class Store {
   applyWalkingAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
 
-    console.log(`🚶 Walking animation started for SVG ID: ${this.selectedElement?.id}`);
-    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+    // Clear any previous animations.
+    this.currentAnimations = [];
 
-    // Apply per-part animations based on walkingAnimations
+    // Flatten the structure.
+    const allObjects = this.getAllObjectsRecursively(svgElement);
+    console.log("Available SVG Parts:", allObjects.map(obj => (obj as any).dataName || obj.name));
+
+    // Animate each part based on walkingAnimations.
     Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
-      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
-
+      const targetElement = allObjects.find(obj => ((obj as any).dataName || obj.name) === partId);
       if (!targetElement) {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-
       console.log(`✅ Found SVG part: ${partId}, applying animation`);
-
-      anime({
+      const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map(k => k.v),
         duration: 3000,
@@ -664,56 +667,30 @@ export class Store {
           this.canvas?.renderAll();
         }
       });
+      this.currentAnimations.push(animInstance);
     });
 
-    // ✅ Move the entire character forward, stop, then restart
-    anime({
+    // Animate the whole group moving forward.
+    const groupAnim = anime({
       targets: svgElement,
       left: [
-        { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" }, // Move forward
-        { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" }, // Pause
-        { value: svgElement.left || 0, duration: 0 } // Reset instantly
+        { value: (svgElement.left || 0) + 300, duration: 10000, easing: "linear" },
+        { value: (svgElement.left || 0) + 300, duration: 500, easing: "linear" },
+        { value: svgElement.left || 0, duration: 0 }
       ],
       loop: true,
       update: () => {
         this.canvas?.renderAll();
       }
     });
+    this.currentAnimations.push(groupAnim);
   }
 
-  applyHandstandAnimation(svgElement: fabric.Group) {
-    if (!svgElement) return;
 
-    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
-    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
 
-    Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
-      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
 
-      if (!targetElement) {
-        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
-        return;
-      }
 
-      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
 
-      anime({
-        targets: { angle: targetElement.angle || 0 }, // Store rotation separately
-        angle: animationData.keys.map(k => k.v), // Use animation key values
-        duration: 3000,
-        easing: "linear",
-        loop: true,
-        update: (anim) => {
-          targetElement.set("angle", Number(anim.animations[0].currentValue));
-          this.canvas?.renderAll(); // Force Fabric.js to redraw
-          console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
-        },
-        complete: () => {
-          console.log(`✅ Handstand animation completed for ${partId}.`);
-        }
-      });
-    });
-  }
 
   playSelectedSvgAnimation() {
     if (!this.selectedElement || this.selectedElement.type !== "svg") {
@@ -740,20 +717,69 @@ export class Store {
     }
   }
 
+
   setPlaying(playing: boolean) {
     this.playing = playing;
     this.updateVideoElements();
     this.updateAudioElements();
     if (playing) {
-      this.playSelectedSvgAnimation();
-
+      // If we already have animations, resume them. Otherwise, start new ones.
+      if (this.currentAnimations.length > 0) {
+        this.currentAnimations.forEach(anim => anim.play());
+      } else {
+        this.playSelectedSvgAnimation();
+      }
       this.startedTime = Date.now();
       this.startedTimePlay = this.currentTimeInMs;
       requestAnimationFrame(() => {
         this.playFrames();
       });
+    } else {
+      // Pause all running animations.
+      this.currentAnimations.forEach(anim => anim.pause());
     }
   }
+
+
+
+
+  applyHandstandAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
+
+    // Clear previous animations.
+    this.currentAnimations = [];
+
+    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
+    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+
+    Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
+      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+      if (!targetElement) {
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
+      }
+      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+      const animInstance = anime({
+        targets: { angle: targetElement.angle || 0 },
+        angle: animationData.keys.map(k => k.v),
+        duration: 3000,
+        easing: "linear",
+        loop: true,
+        update: (anim) => {
+          targetElement.set("angle", Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
+          console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
+        },
+        complete: () => {
+          console.log(`✅ Handstand animation completed for ${partId}.`);
+        }
+      });
+      this.currentAnimations.push(animInstance);
+    });
+  }
+
+
+
 
 
 
@@ -878,7 +904,10 @@ export class Store {
   }
 
 
- 
+
+
+
+
 
 
 
@@ -900,82 +929,126 @@ export class Store {
     fetch(svgElement.src)
       .then(response => response.text())
       .then(svgText => {
+        // 1) Parse the original SVG document
         const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
         const svgRoot = svgDoc.documentElement;
 
+    
+
+        // Ensure the SVG has an xmlns attribute
         if (!svgRoot.hasAttribute("xmlns")) {
           svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         }
 
-
-
+        // 2) Load the parsed SVG into Fabric
         fabric.loadSVGFromString(serializer.serializeToString(svgRoot), (objects, options) => {
           if (!objects || objects.length === 0) {
-            console.error("🚨 Failed to load SVG objects from modified SVG");
+            console.error("🚨 Failed to load SVG objects");
             return;
           }
 
           console.log("🖌️ Fabric.js Parsed Objects (Before Grouping):", objects);
 
+          // Build a map from each Fabric object's id -> the Fabric object
           const objectMap = new Map<string, fabric.Object>();
-          objects.forEach((obj) => {
-            const fabricObj = obj as any; // Type assertion to prevent error
+          objects.forEach(obj => {
+            const fabricObj = obj as any;
             if (fabricObj.id) {
               objectMap.set(fabricObj.id, fabricObj);
             }
           });
 
-          function extractAllPaths(parentG: Element): fabric.Object[] {
-            const groupObjects: fabric.Object[] = [];
-            Array.from(parentG.children).forEach((child) => {
-              if (child.nodeName === "g") {
-                const subgroupObjects = extractAllPaths(child);
-                groupObjects.push(...subgroupObjects);
-              } else if (child.nodeName === "path") {
-                const pathId = child.getAttribute("id");
-                if (pathId && objectMap.has(pathId)) {
-                  groupObjects.push(objectMap.get(pathId)!);
+
+
+          // We'll collect all parts (with IDs) in this array, mainly for debugging.
+          const allParts: { id: string; obj: fabric.Object }[] = [];
+
+          // 3) Recursive function to rebuild the group structure from the DOM
+          // Recursive function to rebuild the nested structure.
+          // It sets a custom name for each element.
+          const rebuildFabricObjectFromElement = (element: Element): fabric.Object | null => {
+            const nodeName = element.nodeName.toLowerCase();
+            let result: fabric.Object | null = null;
+
+            if (nodeName === "g") {
+              const childFabricObjects: fabric.Object[] = [];
+              Array.from(element.children).forEach((child) => {
+                const childObj = rebuildFabricObjectFromElement(child);
+                if (childObj) {
+                  childFabricObjects.push(childObj);
                 }
+              });
+              // Use the group's id if available; otherwise, assign a fallback.
+              const rawGroupId = element.getAttribute("id");
+              const groupId = rawGroupId || `group-${getUid()}`;
+              const groupName = rawGroupId || `unnamed-group-${groupId}`;
+              const group = new fabric.Group(childFabricObjects, {
+
+                name: groupName,
+                selectable: true,
+              });
+              group.toSVG = function () {
+                const objectsSVG = this.getObjects().map((obj) => obj.toSVG()).join("");
+                return `<g id="${groupId}">${objectsSVG}</g>`;
+              };
+              result = group;
+            } else if (nodeName === "path") {
+              const rawPathId = element.getAttribute("id");
+              const pathId = rawPathId || `path-${getUid()}`;
+              if (rawPathId && objectMap.has(rawPathId)) {
+                result = objectMap.get(rawPathId)!;
+                result.set("name", rawPathId); // Use the original id
+              } else {
+                // Create a dummy Fabric.Path with a fallback name.
+                result = new fabric.Path("", {
+
+                  name: rawPathId || `unnamed-path-${pathId}`,
+                  selectable: true,
+                });
               }
-            });
-            return groupObjects;
-          }
+            } else {
+              return null;
+            }
 
-          function rebuildGroupStructure(parentG: Element): fabric.Group {
-            const groupObjects: fabric.Object[] = extractAllPaths(parentG);
-            const parentId = parentG.getAttribute("id") || `group-${getUid()}`;
+            // Ensure the name property is set (fallback if empty).
+            if (result) {
+              if (!result.name || result.name.trim() === "") {
+                result.set("name", nodeName === "g" ? `unnamed-group-${(result as any).id}` : `unnamed-path-${(result as any).id}`);
+              }
+              // Save the object in our parts list.
+              const resultId = (result as any).id;
+              if (resultId) {
+                allParts.push({ id: resultId, obj: result });
+              }
+            }
+            return result;
+          };
 
-            const group = new fabric.Group(groupObjects, {
-              name: parentId,
-              selectable: true
-            });
 
-            group.toSVG = function () {
-              const objectsSVG = this.getObjects().map(obj => obj.toSVG()).join("");
-              return `<g id="${parentId}">${objectsSVG}</g>`;
-            };
-
-            return group;
-          }
-
-          const topGElements = svgDoc.querySelectorAll(":scope > g");
-          const topLevelGroups: fabric.Group[] = [];
-
-          topGElements.forEach((gElement) => {
-            const group = rebuildGroupStructure(gElement);
-            topLevelGroups.push(group);
+          // 4) Rebuild the top-level objects from <svg> children
+          const topLevelFabricObjects: fabric.Object[] = [];
+          Array.from(svgRoot.children).forEach(child => {
+            const obj = rebuildFabricObjectFromElement(child);
+            if (obj) {
+              topLevelFabricObjects.push(obj);
+            }
           });
 
-          const fullSvgGroup = new fabric.Group(topLevelGroups, {
+          console.log("Complete list of all parts (groups & paths):", allParts.map(p => p.id));
+
+          // 5) Optionally combine them into one top-level group
+          const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
+
             name: "full-svg",
             selectable: true
           });
 
+          // 6) Position and scale the group
           const scaleFactor = 0.3;
           const canvasWidth = this.canvas?.width ?? 800;
           const canvasHeight = this.canvas?.height ?? 600;
-          const groupWidth = fullSvgGroup.width ?? 0;
-          const groupHeight = fullSvgGroup.height ?? 0;
+          const groupWidth = fullSvgGroup.width || 0;
+          const groupHeight = fullSvgGroup.height || 0;
 
           fullSvgGroup.set({
             left: canvasWidth / 2 - (groupWidth * scaleFactor) / 2,
@@ -983,20 +1056,27 @@ export class Store {
             scaleX: scaleFactor,
             scaleY: scaleFactor,
             selectable: true,
-            hasControls: true,
+            hasControls: true
           });
 
+          // 7) Add the group to the canvas
           this.canvas?.add(fullSvgGroup);
           this.canvas?.renderAll();
 
-          console.log("✅ SVG Added to Canvas Successfully. Canvas Objects:", this.canvas?.getObjects());
+          console.log("✅ SVG Added to Canvas. Canvas Objects:", this.canvas?.getObjects());
 
-          this.canvas?.getObjects().forEach((obj, index) => {
-            obj.moveTo(index);
-          });
+          // For debugging, see the final nested group as SVG
+          const addedSvg = fullSvgGroup.toSVG();
+          console.log("🖼️ Full SVG Group as SVG:\n", addedSvg);
+          console.log("Available SVG Parts for Animation:", allParts.map(p => p.id));
 
-          console.log("🔍 Final Fabric.js Objects Count:", this.canvas?.getObjects().length);
+          // 8) Now enumerate *all* nested objects if you want to show them in the UI
+          const allNestedObjects = this.getAllObjectsRecursively(fullSvgGroup);
+          // 'allNestedObjects' is an array of every path/group, at every level.
+          // You can store or pass this to your UI. Example:
+          console.log("🔎 All nested objects (including sub-groups and paths):", allNestedObjects);
 
+          // 9) Create your editor element
           const editorElement: SvgEditorElement = {
             id,
             name: `SVG ${index + 1}`,
@@ -1008,28 +1088,44 @@ export class Store {
               height: groupHeight * scaleFactor,
               rotation: 0,
               scaleX: fullSvgGroup.scaleX ?? 1,
-              scaleY: fullSvgGroup.scaleY ?? 1,
+              scaleY: fullSvgGroup.scaleY ?? 1
             },
             timeFrame: {
               start: 0,
-              end: this.maxTime,
+              end: this.maxTime
             },
             properties: {
               elementId: `svg-${id}`,
-              src: svgElement.src,
+              src: svgElement.src
             },
             fabricObject: fullSvgGroup
           };
 
-          const addedSvg = fullSvgGroup.toSVG();
-          console.log("🖼️ Fabric.js Object as SVG (Final Output with Correct Hierarchy):\n", addedSvg);
-
+          // Save it in your store or local array
           this.addEditorElement(editorElement);
           this.setSelectedElement(editorElement);
         });
       })
       .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
+
+
+  getAllObjectsRecursively(obj: fabric.Object): fabric.Object[] {
+    let results: fabric.Object[] = [obj];
+    if (obj.type === "group") {
+      const group = obj as fabric.Group;
+      group.getObjects().forEach(child => {
+        results = results.concat(this.getAllObjectsRecursively(child));
+      });
+    }
+    return results;
+  }
+
+
+
+
+
+
 
 
 
@@ -1434,50 +1530,165 @@ export class Store {
         }
         case "svg": {
           if (!element.fabricObject) {
-            fabric.loadSVGFromURL(element.properties.src, (objects, options) => {
-              const group = fabric.util.groupSVGElements(objects, {
-                ...options,
-                name: element.id,
-                left: element.placement.x,
-                top: element.placement.y,
-                scaleX: element.placement.scaleX,
-                scaleY: element.placement.scaleY,
-                angle: element.placement.rotation,
-                selectable: true
-              });
 
-              element.fabricObject = group;
-              this.canvas?.add(group);
-              this.canvas?.renderAll();
+            fetch(element.properties.src)
+              .then((response) => response.text())
+              .then((svgText) => {
 
-              // Add modification listener
-              this.canvas?.on("object:modified", (e) => {
-                if (!e.target || e.target !== group) return;
+                const parser = new DOMParser();
+                const serializer = new XMLSerializer();
+                const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+                const svgRoot = svgDoc.documentElement;
 
-                const target = e.target;
-                const placement = element.placement;
+                if (!svgRoot.hasAttribute("xmlns")) {
+                  svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+                }
 
-                const newPlacement = {
-                  ...placement,
-                  x: target.left ?? placement.x,
-                  y: target.top ?? placement.y,
-                  rotation: target.angle ?? placement.rotation,
-                  scaleX: target.scaleX ?? placement.scaleX,
-                  scaleY: target.scaleY ?? placement.scaleY
-                };
+                // 2. Load the SVG into Fabric.
+                fabric.loadSVGFromString(serializer.serializeToString(svgRoot), (objects, options) => {
+                  if (!objects || objects.length === 0) {
+                    console.error("🚨 Failed to load SVG objects");
+                    return;
+                  }
+                  console.log("🖌️ Fabric.js Parsed Objects (Before Grouping):", objects);
 
-                this.updateEditorElement({
-                  ...element,
-                  placement: newPlacement
+                  // Build a map for lookup by id.
+                  const objectMap = new Map<string, fabric.Object>();
+                  objects.forEach((obj) => {
+                    const fabricObj = obj as any;
+                    if (fabricObj.id) {
+                      objectMap.set(fabricObj.id, fabricObj);
+                    }
+                  });
+
+                  // Array to collect all parts.
+                  const allParts: { id: string; obj: fabric.Object }[] = [];
+
+                  // 3. Recursive function to rebuild the nested structure.
+                  const rebuildFabricObjectFromElement = (elem: Element): fabric.Object | null => {
+                    const nodeName = elem.nodeName.toLowerCase();
+                    let result: fabric.Object | null = null;
+
+                    if (nodeName === "g") {
+                      const childFabricObjects: fabric.Object[] = [];
+                      Array.from(elem.children).forEach((child) => {
+                        const childObj = rebuildFabricObjectFromElement(child);
+                        if (childObj) {
+                          childFabricObjects.push(childObj);
+                        }
+                      });
+                      // Use the group's id if available; otherwise, assign a fallback.
+                      const rawGroupId = elem.getAttribute("id");
+                      const groupId = rawGroupId || `group-${getUid()}`;
+                      const groupName = rawGroupId || `unnamed-group-${groupId}`;
+                      const group = new fabric.Group(childFabricObjects, {
+                        name: groupName,
+                        selectable: true,
+                      });
+                      group.toSVG = function () {
+                        const objectsSVG = this.getObjects().map((obj) => obj.toSVG()).join("");
+                        return `<g id="${groupId}">${objectsSVG}</g>`;
+                      };
+                      result = group;
+                    } else if (nodeName === "path") {
+                      const rawPathId = elem.getAttribute("id");
+                      const pathId = rawPathId || `path-${getUid()}`;
+                      if (rawPathId && objectMap.has(rawPathId)) {
+                        result = objectMap.get(rawPathId)!;
+                        result.set("name", rawPathId); // Use the original id
+                      } else {
+                        // Create a dummy Fabric.Path with a fallback name.
+                        result = new fabric.Path("", {
+                          name: rawPathId || `unnamed-path-${pathId}`,
+                          selectable: true,
+                        });
+                      }
+                    } else {
+                      return null;
+                    }
+
+                    // Ensure the name property is set.
+                    if (result) {
+                      if (!result.name || result.name.trim() === "") {
+                        result.set("name", nodeName === "g" ? `unnamed-group-${(result as any).id}` : `unnamed-path-${(result as any).id}`);
+                      }
+                      const resultId = (result as any).id;
+                      if (resultId) {
+                        allParts.push({ id: resultId, obj: result });
+                      }
+                    }
+                    return result;
+                  };
+
+                  const topLevelFabricObjects: fabric.Object[] = [];
+                  Array.from(svgRoot.children).forEach((child) => {
+                    const obj = rebuildFabricObjectFromElement(child);
+                    if (obj) {
+                      topLevelFabricObjects.push(obj);
+                    }
+                  });
+
+                  console.log("Complete list of all parts (groups & paths):", allParts.map(p => p.id));
+
+                  // 5. Combine the top-level objects into one overarching group.
+                  const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
+                    name: "full-svg",
+                    selectable: true,
+                  });
+
+                  // 6. Position and scale the group.
+                  const scaleFactor = 0.3;
+                  const canvasWidth = this.canvas?.width ?? 800;
+                  const canvasHeight = this.canvas?.height ?? 600;
+                  const groupWidth = fullSvgGroup.width || 0;
+                  const groupHeight = fullSvgGroup.height || 0;
+                  fullSvgGroup.set({
+                    left: canvasWidth / 2 - (groupWidth * scaleFactor) / 2,
+                    top: canvasHeight / 2 - (groupHeight * scaleFactor) / 2,
+                    scaleX: scaleFactor,
+                    scaleY: scaleFactor,
+                    selectable: true,
+                    hasControls: true,
+                  });
+
+                  // Save the group in the element record.
+                  element.fabricObject = fullSvgGroup;
+                  this.canvas?.add(fullSvgGroup);
+                  this.canvas?.renderAll();
+
+                  console.log("✅ Nested SVG structure added to canvas");
+                  console.log("🔍 Final Fabric.js Objects Count:", this.canvas?.getObjects().length);
+                  const finalSvg = fullSvgGroup.toSVG();
+                  console.log("🖼️ Final Nested Group SVG:\n", finalSvg);
+                  console.log("Available SVG Parts for Animation:", allParts.map(p => (p.obj as any).dataName));
+
+                  // Add modification listener on the fullSvgGroup.
+                  this.canvas?.on("object:modified", (e) => {
+                    if (!e.target || e.target !== fullSvgGroup) return;
+                    const target = e.target;
+                    const placement = element.placement;
+                    const newPlacement = {
+                      ...placement,
+                      x: target.left ?? placement.x,
+                      y: target.top ?? placement.y,
+                      rotation: target.angle ?? placement.rotation,
+                      scaleX: target.scaleX ?? placement.scaleX,
+                      scaleY: target.scaleY ?? placement.scaleY,
+                    };
+                    this.updateEditorElement({
+                      ...element,
+                      placement: newPlacement,
+                    });
+                  });
                 });
-              });
-            });
+              })
+              .catch((error) => console.error("⚠️ Error fetching SVG:", error));
           } else {
             this.canvas?.add(element.fabricObject);
+            this.canvas?.renderAll();
           }
           break;
         }
-
 
 
 
@@ -1580,7 +1791,7 @@ export function isEditorSvgElement(
 
 function getTextObjectsPartitionedByCharacters(textObject: fabric.Text, element: TextEditorElement): fabric.Text[] {
   let copyCharsObjects: fabric.Text[] = [];
-  // replace all line endings with blank
+
   const characters = (textObject.text ?? "").split('').filter((m) => m !== '\n');
   const charObjects = textObject.__charBounds;
   if (!charObjects) return [];

@@ -32,44 +32,95 @@ export const HANDSTAND:string='handstand'
 
 
 
-// Function to reorder Pant Front details
-export const reorderPantFrontDetails = (svgText: string) => {
-  const parser = new DOMParser();
-  const svgDoc = parser.parseFromString(svgText, "image/svg+xml"); // Parse the string into an XMLDocument
+ 
+ 
+ 
+// export const mergePantBackPaths = (svgDoc: XMLDocument): Element | null => {
+ 
+//   const container = svgDoc.getElementById("pant-back-details");
+//   if (!container) {
+//     console.error("Error: 'pant-back-details' container not found.");
+//     return null;
+//   }
 
-  const parentGroup = svgDoc.getElementById("pant-front-details");
-  if (!parentGroup) return;
+ 
+//   const pantP1 = svgDoc.getElementById("pant-p1");
+//   if (!pantP1) {
+//     console.error("Error: 'pant-p1' element not found.");
+//     return null;
+//   }
 
-  const pantP2 = svgDoc.getElementById("pant-p2_00000181791082222361633450000004750754936289298353_");
-  const legFront = svgDoc.getElementById("leg-front");
-  const shoeFront = svgDoc.getElementById("shoe-front");
-  const pantP1 = svgDoc.getElementById("pant-p1_00000031922170619610477720000001442069305815377831_");
+ 
+//   const legBackGroup = svgDoc.getElementById("leg-back");
+//   if (!legBackGroup) {
+//     console.error("Error: 'leg-back' group not found.");
+//     return null;
+//   }
+//   const legBackPath = legBackGroup.querySelector("path#path39");
+//   if (!legBackPath) {
+//     console.error("Error: 'path39' element not found in 'leg-back'.");
+//     return null;
+//   }
 
-  if (pantP2 && legFront && shoeFront && pantP1) {
-    parentGroup.appendChild(pantP2);
-    parentGroup.appendChild(legFront);
-    parentGroup.appendChild(shoeFront);
-    parentGroup.appendChild(pantP1);
-  }
-}
+ 
+//   const shoeBackGroup = svgDoc.getElementById("shoe-back");
+//   if (!shoeBackGroup) {
+//     console.error("Error: 'shoe-back' group not found.");
+//     return null;
+//   }
+//   const shoeBackPath = shoeBackGroup.querySelector("path#path45");
+//   if (!shoeBackPath) {
+//     console.error("Error: 'path45' element not found in 'shoe-back'.");
+//     return null;
+//   }
 
-// Function to reorder Pant Back details
-export const reorderPantBackDetails = (svgText: string) => {
-  const parser = new DOMParser();
-  const svgDoc = parser.parseFromString(svgText, "image/svg+xml"); // Parse the string into an XMLDocument
+//   // 3. Extract the "d" attributes.
+//   const dPant = pantP1.getAttribute("d") || "";
+//   const dLeg = legBackPath.getAttribute("d") || "";
+//   const dShoe = shoeBackPath.getAttribute("d") || "";
 
-  const parentGroup = svgDoc.getElementById("pant-back-details");
-  if (!parentGroup) return;
+//   if (!dPant || !dLeg || !dShoe) {
+//     console.error("Missing 'd' attribute on one or more required elements.", {
+//       dPant,
+//       dLeg,
+//       dShoe,
+//     });
+//     return null;
+//   }
 
-  const pantP2 = svgDoc.getElementById("pant-p2");
-  const legBack = svgDoc.getElementById("leg-back");
-  const shoeBack = svgDoc.getElementById("shoe-back");
-  const pantP1 = svgDoc.getElementById("pant-p1");
+//   // 4. Merge the path data. (Assumes each subpath starts with a move command.)
+//   const mergedD = `${dPant} ${dLeg} ${dShoe}`.trim();
+//   console.log("Merged path data:", mergedD);
 
-  if (pantP2 && legBack && shoeBack && pantP1) {
-    parentGroup.appendChild(pantP2);
-    parentGroup.appendChild(legBack);
-    parentGroup.appendChild(shoeBack);
-    parentGroup.appendChild(pantP1);
-  }
-}
+//   // 5. Create a new <path> element with the merged data.
+//   const svgNS = "http://www.w3.org/2000/svg";
+//   const mergedPath = svgDoc.createElementNS(svgNS, "path");
+//   mergedPath.setAttribute("id", "merged_pant_back");
+//   // Use the fill from pantP1 or a default value.
+//   const fillPant = pantP1.getAttribute("fill") || "#020b16";
+//   mergedPath.setAttribute("fill", fillPant);
+//   mergedPath.setAttribute("d", mergedD);
+
+//   // 6. Remove the original elements so they are not duplicated.
+//   // Remove pant-p1.
+//   if (pantP1.parentNode) {
+//     pantP1.parentNode.removeChild(pantP1);
+//   }
+//   // Remove the entire leg-back group.
+//   if (legBackGroup.parentNode) {
+//     legBackGroup.parentNode.removeChild(legBackGroup);
+//   }
+//   // Remove the entire shoe-back group.
+//   if (shoeBackGroup.parentNode) {
+//     shoeBackGroup.parentNode.removeChild(shoeBackGroup);
+//   }
+
+//   // 7. Append the merged path to the container.
+//   container.appendChild(mergedPath);
+//   console.log("Merged path added to 'pant-back-details' and old elements removed.");
+
+//   return mergedPath;
+// };
+
+
+

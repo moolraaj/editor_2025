@@ -6,55 +6,57 @@ import { SeekPlayer } from "./timeline-related/SeekPlayer";
 
 export const TimeLine = observer(() => {
   const store = useContext(StoreContext);
-  const [draggedElementIndex, setDraggedElementIndex] = useState<number | null>(null);  
-  const [hoveredElementIndex, setHoveredElementIndex] = useState<number | null>(null); 
+  const [draggedElementIndex, setDraggedElementIndex] = useState<number | null>(null);
+  const [hoveredElementIndex, setHoveredElementIndex] = useState<number | null>(null);
   const timelineRef = useRef<HTMLDivElement | null>(null);
 
   const percentOfCurrentTime = (store.currentTimeInMs / store.maxTime) * 100;
 
-  
+  // Handle the start of the drag event
   const handleDragStart = (index: number) => {
-    setDraggedElementIndex(index);  
+    setDraggedElementIndex(index);  // Set the dragged index
   };
 
- 
+  // Handle the drag over event
   const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    setHoveredElementIndex(index);  
+    e.preventDefault();  // Prevent the default behavior to allow dropping
+    setHoveredElementIndex(index);  // Set the hovered index
   };
 
-  
+  // Handle the drop event
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (draggedElementIndex === null || hoveredElementIndex === null) return;
 
+    // If dragging and hovering over different elements, swap them
     if (draggedElementIndex !== hoveredElementIndex) {
-      store.moveElement(draggedElementIndex, hoveredElementIndex);  
-      store.reorderFabricObjects(draggedElementIndex, hoveredElementIndex);  
+      store.moveElement(draggedElementIndex, hoveredElementIndex);  // Move element in store
+      store.reorderFabricObjects(draggedElementIndex, hoveredElementIndex);  // Reorder on canvas
     }
 
-    setDraggedElementIndex(null);  
-    setHoveredElementIndex(null);  
+    // Reset the dragged and hovered indices
+    setDraggedElementIndex(null);
+    setHoveredElementIndex(null);
   };
 
   return (
     <div className="flex flex-col">
-      <SeekPlayer/>
+      <SeekPlayer />
       <div
         className="flex-1 relative"
         ref={timelineRef}
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}  
+        onDragOver={(e) => e.preventDefault()}  // Prevent default to allow drop
       >
         {store.editorElements.map((element, index) => (
           <TimeFrameView
             key={element.id}
             element={element}
             index={index}
-            onDragStart={handleDragStart}  
-            onDragOver={(e) => handleDragOver(e, index)}  
-            isDragged={draggedElementIndex === index}  
-            isHovered={hoveredElementIndex === index}  
+            onDragStart={handleDragStart}  // Start dragging the element
+            onDragOver={(e) => handleDragOver(e, index)}  // Handle dragging over the element
+            isDragged={draggedElementIndex === index}  // Indicate if the element is being dragged
+            isHovered={hoveredElementIndex === index}  // Indicate if the element is hovered
           />
         ))}
         <div
@@ -65,3 +67,5 @@ export const TimeLine = observer(() => {
     </div>
   );
 });
+
+

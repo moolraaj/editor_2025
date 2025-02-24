@@ -8,7 +8,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 936.9, y: 365.4, type: "corner" }
     },
-    "hand-p2": {
+    "merged-hand-front": {
         keys: [
             { t: 0, v: 0 },
             { t: 900, v: -10.44194 },
@@ -63,7 +63,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 926.883423, y: 556.6, type: "corner" }
     },
-    "pant-p1_00000031922170619610477720000001442069305815377831_": {
+    "merged-path-front": {
         keys: [
             { t: 0, v: 0 },
             { t: 900, v: 18.0172 },
@@ -99,7 +99,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 988.290986, y: 552.134605, type: "corner" }
     },
-    "pant-p1": {
+    "merged-path-back": {
         keys: [
             { t: 0, v: 0 },
             { t: 900, v: 6.426719 },
