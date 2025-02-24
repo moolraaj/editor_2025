@@ -58,7 +58,7 @@ export const walkingAnimations = {
         keys: [
             { t: 0, v: 0 },
             { t: 900, v: 4.340396 },
-            { t: 1900, v: -33.392531 },
+            { t: 1900, v: -30.392531 },
             { t: 3000, v: -2.970139 },
         ],
         origin: { x: 926.883423, y: 556.6, type: "corner" }
