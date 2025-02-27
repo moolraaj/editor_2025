@@ -67,6 +67,10 @@ body {
   
 }
 
+.layer_active {
+  background: rgb(185 28 28);
+}
+
 .layers_w button {
   display: flex;
   align-items: center;
