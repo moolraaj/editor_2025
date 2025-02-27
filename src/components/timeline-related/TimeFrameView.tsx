@@ -141,8 +141,7 @@ export const TimeFrameView = observer((props: {
         }}
       >
         <div className={`h-full w-full text-white text-xs min-w-[0px] px-2 py-1.25 leading-[25px] text-center ${isSelected ? "layer_active" : ""}`}>
-          {element.name}
-
+          {element.name} 
           <div className="button_l_w">
             <button onClick={() => setIsShow(!isShow)}>
               <FaEllipsisV />
@@ -151,13 +150,13 @@ export const TimeFrameView = observer((props: {
 
           {isShow && (
             <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => { store.copyElement(); setIsShow(false); }}>
-                <FaCopy className="text-blue-500" />
-                Ctrl + c
-              </button>
               <button onClick={() => { store.cutElement(); setIsShow(false); }}>
                 <FaCut className="text-blue-500" />
                 Ctrl + x
+              </button>
+              <button onClick={() => { store.copyElement(); setIsShow(false); }}>
+                <FaCopy className="text-blue-500" />
+                Ctrl + c
               </button>
               <button onClick={() => { store.pasteElement(); setIsShow(false); }}>
                 <FaPaste className="text-blue-500" />
