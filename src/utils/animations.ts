@@ -58,7 +58,7 @@ export const walkingAnimations = {
         keys: [
             { t: 0, v: 0 },
             { t: 900, v: 4.340396 },
-            { t: 1900, v: -25.392531 },
+            { t: 1900, v: -18.392531 },
             { t: 3000, v: -2.970139 },
         ],
         origin: { x: 926.883423, y: 556.6, type: "corner" }
@@ -92,7 +92,7 @@ export const walkingAnimations = {
     },
     "pant-back-details": {
         keys: [
-            { t: 0, v: 0 },
+            { t: 0, v: 10 },
             { t: 900, v: -12.022209 },
             { t: 1900, v: 17.310369 },
             { t: 3000, v: -0.896351 },
