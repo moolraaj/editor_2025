@@ -98,7 +98,24 @@ export class Store {
 
 
 
-
+  cutElement() {
+    if (!this.selectedElement) {
+      console.warn("⚠️ No layer selected to cut.");
+      return;
+    }
+    if (this.copiedElement) {
+      console.warn("⚠️ Clipboard not empty—overwriting with new cut.");
+    }
+    this.copiedElement = this.selectedElement;
+    if (this.selectedElement.fabricObject) {
+      this.canvas?.remove(this.selectedElement.fabricObject);
+      this.canvas?.renderAll();
+    }
+    this.removeEditorElement(this.selectedElement.id);
+    this.selectedElement = null;
+    console.log("✂️ CUT element with ID:", this.copiedElement.id);
+  }
+  
 
 
 
@@ -659,7 +676,7 @@ export class Store {
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map(k => k.v),
-        duration: 3000,
+        duration: 1400,
         easing: "linear",
         loop: true,
         update: (anim) => {

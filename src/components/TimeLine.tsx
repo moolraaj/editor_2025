@@ -46,17 +46,17 @@ export const TimeLine = observer(() => {
         className="flex-1 relative"
         ref={timelineRef}
         onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}  // Prevent default to allow drop
+        onDragOver={(e) => e.preventDefault()}   
       >
         {store.editorElements.map((element, index) => (
           <TimeFrameView
             key={element.id}
             element={element}
             index={index}
-            onDragStart={handleDragStart}  // Start dragging the element
-            onDragOver={(e) => handleDragOver(e, index)}  // Handle dragging over the element
-            isDragged={draggedElementIndex === index}  // Indicate if the element is being dragged
-            isHovered={hoveredElementIndex === index}  // Indicate if the element is hovered
+            onDragStart={handleDragStart}   
+            onDragOver={(e) => handleDragOver(e, index)}   
+            isDragged={draggedElementIndex === index}   
+            isHovered={hoveredElementIndex === index}  
           />
         ))}
         <div

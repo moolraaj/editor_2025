@@ -5,6 +5,8 @@ import { observer } from "mobx-react-lite";
 import DragableView from "./DragableView";
 import { colorMap } from "@/utils/animations";
 import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
+import { MdCallSplit } from 'react-icons/md';
+
 
 export const TimeFrameView = observer((props: { 
   element: EditorElement, 
@@ -78,18 +80,22 @@ export const TimeFrameView = observer((props: {
             <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => { store.copyElement(); setIsShow(false); }}>
                 <FaCopy className="text-blue-500" />
-                Copy
+                Ctrl + c
+              </button>
+              <button onClick={() => { store.cutElement(); setIsShow(false); }}>
+                <FaCut  className="text-blue-500" />
+                Ctrl + x
               </button>
               <button onClick={() => { store.pasteElement(); setIsShow(false); }}>
-                <FaPaste className="text-green-500" />
-                Paste
+                <FaPaste className="text-blue-500" />
+                Ctrl +v
               </button>
               <button onClick={() => { store.deleteElement(); setIsShow(false); }}>
                 <FaTrash className="text-red-500" />
                 Delete
               </button>
               <button onClick={() => { store.splitElement(); setIsShow(false); }}>
-                <FaCut className="text-red-500" />
+                <FaCut className="text-blue-500" />
                 Split
               </button>
             </div>
