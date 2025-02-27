@@ -676,7 +676,7 @@ export class Store {
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map(k => k.v),
-        duration: 1400,
+        duration: 1600,
         easing: "linear",
         loop: true,
         update: (anim) => {
