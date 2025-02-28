@@ -60,7 +60,7 @@ export const TimeLine = observer(() => {
           />
         ))}
         <div
-          className="w-[2px] bg-red-400 absolute top-0 bottom-0 z-20"
+          className="w-[2px] bg-[#f87171] absolute top-0 bottom-0 z-20 left-10"
           style={{ left: `${percentOfCurrentTime}%` }}
         ></div>
       </div>

@@ -67,6 +67,19 @@ body {
   
 }
 
+ 
+div#ruler_scale_drag::before {
+  content: "";
+  position: absolute;
+  z-index: 9999;
+  width: 40px;
+  height: 46px;
+  background-image: url('/time-line.png');
+  background-size: cover;
+  top: -5px;
+  left: -20px;
+}
+
 .layer_active {
   background: rgb(37 99 235);
 }

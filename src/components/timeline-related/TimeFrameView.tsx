@@ -5,7 +5,7 @@ import { observer } from "mobx-react-lite";
 import DragableView from "./DragableView";
 import { colorMap } from "@/utils/animations";
 import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
-import { MdCallSplit } from 'react-icons/md';
+ 
 
 
 export const TimeFrameView = observer((props: {

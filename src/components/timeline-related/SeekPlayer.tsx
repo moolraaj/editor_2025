@@ -4,8 +4,10 @@ import { StoreContext } from "@/store";
 import { formatTimeToMinSecMili } from "@/utils";
 import { observer } from "mobx-react-lite";
 import { useContext } from "react";
-import { MdPlayArrow, MdPause } from "react-icons/md";
 import { ScaleRangeInput } from "./ScaleRangeInput";
+
+import play from '../../../public/play.png'
+import pause from '../../../public/pause.png'
 
 const MARKINGS = [
   {
@@ -32,7 +34,7 @@ export type SeekPlayerProps = {};
 
 export const SeekPlayer = observer((_props: SeekPlayerProps) => {
   const store = useContext(StoreContext);
-  const Icon = store.playing ? MdPause : MdPlayArrow;
+  const Icon = store.playing ? <img src={pause.src} width={40}/> : <img src={play.src} width={40}/>;
   const formattedTime = formatTimeToMinSecMili(store.currentTimeInMs);
   const formattedMaxTime = formatTimeToMinSecMili(store.maxTime);
 
@@ -45,7 +47,7 @@ export const SeekPlayer = observer((_props: SeekPlayerProps) => {
             store.setPlaying(!store.playing);
           }}
         >
-          <Icon size="40"></Icon>
+           {Icon}
         </button>
         <span className="font-mono">{formattedTime}</span>
         <div className="w-[1px] h-[25px] bg-slate-300 mx-[10px]"></div>

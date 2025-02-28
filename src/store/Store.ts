@@ -1706,9 +1706,6 @@ export class Store {
           }
           break;
         }
-
-
-
         case "text": {
           const textObject = new fabric.Textbox(element.properties.text, {
             name: element.id,
@@ -1768,7 +1765,13 @@ export class Store {
         element.fabricObject.on("selected", function (e) {
           store.setSelectedElement(element);
         });
+
+        // #to enable this for z-index wise show the layers in the canvas 
+
+        // canvas.add(element.fabricObject);
+        // element.fabricObject.moveTo(index);
       }
+     
     }
     const selectedEditorElement = store.selectedElement;
     if (selectedEditorElement && selectedEditorElement.fabricObject) {
