@@ -55,6 +55,7 @@
   "devDependencies": {
     "@types/animejs": "^3.1.7",
     "@types/gif.js": "^0.2.5",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-color": "^3.0.6"
   },
   "overrides": {
