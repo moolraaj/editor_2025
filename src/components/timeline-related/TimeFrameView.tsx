@@ -7,32 +7,28 @@ import DragableView from "./DragableView";
 import { colorMap } from "@/utils/animations";
 import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
 
-
 export const TimeFrameView = observer((props: { element: EditorElement }) => {
   const store = React.useContext(StoreContext);
   const { element } = props;
-  const disabled = element.type === "audio";
+  
+  const disabled = false;
+
   const isSelected = store.selectedElement?.id === element.id;
   const layerColor = colorMap[element.type] || "gray";
 
-  const disabledCursor = disabled ? "cursor-no-drop" : "cursor-ew-resize";
+  const disabledCursor = "cursor-ew-resize";
 
   const [isShow, setIsShow] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-    
       const isCtrlOrCmd = event.ctrlKey || event.metaKey;
-
-   
       const key = event.key.toLowerCase();
 
-      
       if (isCtrlOrCmd) {
         switch (key) {
-          case "x": 
+          case "x":
             event.preventDefault();
             if (store.selectedElement) {
               store.cutElement();
@@ -40,8 +36,7 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
               console.warn("⚠️ No layer selected to cut.");
             }
             return;
-
-          case "c": 
+          case "c":
             event.preventDefault();
             if (store.selectedElement) {
               store.copyElement();
@@ -49,19 +44,14 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
               console.warn("⚠️ No layer selected to copy.");
             }
             return;
-
-          case "v": 
+          case "v":
             event.preventDefault();
             store.pasteElement();
             return;
-
           default:
             break;
         }
-      }
-     
-      else {
-        
+      } else {
         if (event.key === "Delete") {
           event.preventDefault();
           if (store.selectedElement) {
@@ -72,17 +62,11 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         }
       }
     }
- 
     window.addEventListener("keydown", handleKeyDown);
-
- 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [store]);
-
-
-
 
   return (
     <div
@@ -114,9 +98,7 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         disabled={disabled}
         style={{
           width: `${
-            ((element.timeFrame.end - element.timeFrame.start) /
-              store.maxTime) *
-            100
+            ((element.timeFrame.end - element.timeFrame.start) / store.maxTime) * 100
           }%`,
           backgroundColor: layerColor,
         }}
@@ -130,40 +112,72 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         }}
       >
         <div
-          className={`h-full w-full text-white text-xs min-w-[0px] px-2 leading-[25px] ${isSelected ? "layer_active" : ""}`}
+          className={`h-full w-full text-white text-xs min-w-[0px] px-2 leading-[25px] ${
+            isSelected ? "layer_active" : ""
+          }`}
         >
           {element.name}
 
-          {isShow && (
+          {isShow &&  (
             <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
-              <button onClick={() => { store.cutElement(); setIsShow(false); }}>
+              <button
+                onClick={() => {
+                  store.cutElement();
+                  setIsShow(false);
+                }}
+              >
                 <FaCut className="text-blue-500" />
-                Ctrl + x
+                Cut [Ctrl + x]
               </button>
-              <button onClick={() => { store.copyElement(); setIsShow(false); }}>
+              <button
+                onClick={() => {
+                  store.copyElement();
+                  setIsShow(false);
+                }}
+              >
                 <FaCopy className="text-blue-500" />
-                Ctrl + c
+                Copy [Ctrl + c]
               </button>
-              <button onClick={() => { store.pasteElement(); setIsShow(false); }}>
+              <button
+                onClick={() => {
+                  store.pasteElement();
+                  setIsShow(false);
+                }}
+              >
                 <FaPaste className="text-blue-500" />
-                Ctrl +v
+                Paste [Ctrl + v]
               </button>
-              <button onClick={() => { store.deleteElement(); setIsShow(false); }}>
+              <button
+                onClick={() => {
+                  store.deleteElement();
+                  setIsShow(false);
+                }}
+              >
                 <FaTrash className="text-red-500" />
-                Delete
+                Del [Delete]
               </button>
-              <button onClick={() => { store.splitElement(); setIsShow(false); }}>
+              <button
+                onClick={() => {
+                  store.splitElement();
+                  setIsShow(false);
+                }}
+              >
                 <FaCut className="text-blue-500" />
                 Split
               </button>
             </div>
           )}
 
+
+      
+
           <div className="button_l_w">
             <button onClick={() => setIsShow(!isShow)}>
               <FaEllipsisV />
             </button>
           </div>
+        
+
         </div>
       </DragableView>
       <DragableView

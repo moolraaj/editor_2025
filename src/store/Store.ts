@@ -115,7 +115,7 @@ export class Store {
     this.selectedElement = null;
     console.log("✂️ CUT element with ID:", this.copiedElement.id);
   }
-  
+
 
 
 
@@ -230,7 +230,7 @@ export class Store {
 
   splitElement() {
 
-    if (!this.selectedElement || this.selectedElement.type === "audio") {
+    if (!this.selectedElement) {
       console.warn("⚠️ Cannot split audio layers.");
       return;
     }
@@ -785,11 +785,9 @@ export class Store {
         update: (anim) => {
           targetElement.set("angle", Number(anim.animations[0].currentValue));
           this.canvas?.renderAll();
-          console.log(`🎬 Handstand animation progress for ${partId}: ${Math.round(anim.progress)}%`);
+          
         },
-        complete: () => {
-          console.log(`✅ Handstand animation completed for ${partId}.`);
-        }
+      
       });
       this.currentAnimations.push(animInstance);
     });
@@ -836,6 +834,8 @@ export class Store {
         e.fabricObject.visible = isInside;
       }
     )
+    this.updateAudioElements();
+
   }
 
   handleSeek(seek: number) {
@@ -921,15 +921,6 @@ export class Store {
   }
 
 
-
-
-
-
-
-
-
-
-
   addSvg(index: number) {
     console.log("Adding SVG:", index);
 
@@ -950,7 +941,7 @@ export class Store {
         const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
         const svgRoot = svgDoc.documentElement;
 
-    
+
 
         // Ensure the SVG has an xmlns attribute
         if (!svgRoot.hasAttribute("xmlns")) {
@@ -1240,23 +1231,38 @@ export class Store {
       })
   }
   updateAudioElements() {
-    this.editorElements.filter(
-      (element): element is AudioEditorElement =>
-        element.type === "audio"
-    )
+    this.editorElements
+      .filter((element): element is AudioEditorElement => element.type === "audio")
       .forEach((element) => {
-        const audio = document.getElementById(element.properties.elementId);
-        if (isHtmlAudioElement(audio)) {
-          const audioTime = (this.currentTimeInMs - element.timeFrame.start) / 1000;
-          audio.currentTime = audioTime;
-          if (this.playing) {
-            audio.play();
-          } else {
+        const audio = document.getElementById(element.properties.elementId) as HTMLAudioElement | null;
+        if (!audio) return;
+  
+        const { start, end } = element.timeFrame;
+        const currentTimeMs = this.currentTimeInMs;
+        const isWithinRange = currentTimeMs >= start && currentTimeMs <= end;
+  
+        if (this.playing && isWithinRange) {
+          if (!(element.properties as any).isAudioPlaying) {
+            const audioTime = (currentTimeMs - start) / 1000;
+            audio.currentTime = Math.max(0, audioTime);
+            audio.play().catch(err => console.warn("⚠️ Audio play error:", err));
+            (element.properties as any).isAudioPlaying = true;
+          }
+        } else {
+          if ((element.properties as any).isAudioPlaying) {
             audio.pause();
+            audio.currentTime = 0;
+            (element.properties as any).isAudioPlaying = false;
           }
         }
-      })
+      });
   }
+  
+  
+  
+  
+  
+  
   // saveCanvasToVideo() {
   //   const video = document.createElement("video");
   //   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -1542,9 +1548,62 @@ export class Store {
           });
           break;
         }
+     
         case "audio": {
+         
+          const rect = new fabric.Rect({
+            left: element.placement.x,
+            top: element.placement.y,
+            width: element.placement.width,
+            height: element.placement.height,
+            fill: "transparent",
+            selectable: true,
+          });
+        
+          const label = new fabric.Text("Audio", {
+            left: element.placement.x + 5,
+            top: element.placement.y + 5,
+            fontSize: 16,
+            fontWeight:600,
+            fill: "green",
+            selectable: false,
+          });
+         
+          const audioGroup = new fabric.Group([rect, label], {
+            left: element.placement.x,
+            top: element.placement.y,
+            selectable: true,
+          });
+        
+          element.fabricObject = audioGroup;
+          canvas.add(audioGroup);
+
+       
+          canvas.on("object:modified", function (e) {
+            if (!e.target) return;
+            const target = e.target;
+            if (target !== audioGroup) return;
+            const placement = element.placement;
+            const newPlacement = {
+              ...placement,
+              x: target.left ?? placement.x,
+              y: target.top ?? placement.y,
+              rotation: target.angle ?? placement.rotation,
+              width: target.width ?? placement.width,
+              height: target.height ?? placement.height,
+              scaleX: target.scaleX ?? placement.scaleX,
+              scaleY: target.scaleY ?? placement.scaleY,
+            };
+            const newElement = {
+              ...element,
+              placement: newPlacement,
+            };
+            store.updateEditorElement(newElement);
+          });
+          
           break;
         }
+
         case "svg": {
           if (!element.fabricObject) {
 
@@ -1771,7 +1830,7 @@ export class Store {
         // canvas.add(element.fabricObject);
         // element.fabricObject.moveTo(index);
       }
-     
+
     }
     const selectedEditorElement = store.selectedElement;
     if (selectedEditorElement && selectedEditorElement.fabricObject) {

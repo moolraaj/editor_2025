@@ -20,7 +20,7 @@ export type ImageEditorElement = EditorElementBase<
 
 export type AudioEditorElement = EditorElementBase<
   "audio",
-  { src: string; elementId: string }
+  { src: string; elementId: string,isAudioPlaying?: boolean; }
 >;
 export type TextEditorElement = EditorElementBase<
   "text",
