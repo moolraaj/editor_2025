@@ -10,7 +10,7 @@ import { FaCopy, FaPaste, FaTrash, FaEllipsisV, FaCut } from "react-icons/fa";
 export const TimeFrameView = observer((props: { element: EditorElement }) => {
   const store = React.useContext(StoreContext);
   const { element } = props;
-  
+
   const disabled = false;
 
   const isSelected = store.selectedElement?.id === element.id;
@@ -47,6 +47,14 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
           case "v":
             event.preventDefault();
             store.pasteElement();
+            return;
+          case "/":
+            event.preventDefault();
+            if (store.selectedElement) {
+              store.splitElement();
+            } else {
+              console.warn("⚠️ No layer selected to split.");
+            }
             return;
           default:
             break;
@@ -97,9 +105,8 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         value={element.timeFrame.start}
         disabled={disabled}
         style={{
-          width: `${
-            ((element.timeFrame.end - element.timeFrame.start) / store.maxTime) * 100
-          }%`,
+          width: `${((element.timeFrame.end - element.timeFrame.start) / store.maxTime) * 100
+            }%`,
           backgroundColor: layerColor,
         }}
         total={store.maxTime}
@@ -112,13 +119,12 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
         }}
       >
         <div
-          className={`h-full w-full text-white text-xs min-w-[0px] px-2 leading-[25px] ${
-            isSelected ? "layer_active" : ""
-          }`}
+          className={`h-full w-full text-white text-xs min-w-[0px] px-2 leading-[25px] ${isSelected ? "layer_active" : ""
+            }`}
         >
           {element.name}
 
-          {isShow &&  (
+          {isShow && (
             <div ref={dropdownRef} className="layers_w" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => {
@@ -163,20 +169,20 @@ export const TimeFrameView = observer((props: { element: EditorElement }) => {
                 }}
               >
                 <FaCut className="text-blue-500" />
-                Split
+                Split [Ctrl + Enter]
               </button>
             </div>
           )}
 
 
-      
+
 
           <div className="button_l_w">
             <button onClick={() => setIsShow(!isShow)}>
               <FaEllipsisV />
             </button>
           </div>
-        
+
 
         </div>
       </DragableView>

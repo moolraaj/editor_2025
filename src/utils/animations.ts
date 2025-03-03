@@ -72,24 +72,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 936.9, y: 687.070066, type: "corner" }
     },
-    "shoe-front": {
-        keys: [
-            { t: 0, v: 0 },
-            { t: 900, v: 18.0172 },
-            { t: 1900, v: 18.953561 },
-            { t: 3000, v: 1.219545 },
-        ],
-        origin: { x: 936.9, y: 687.070066, type: "corner" }
-    },
-    "leg-front": {
-        keys: [
-            { t: 0, v: 0 },
-            { t: 900, v: 18.0172 },
-            { t: 1900, v: 18.953561 },
-            { t: 3000, v: 1.219545 },
-        ],
-        origin: { x: 936.9, y: 687.070066, type: "corner" }
-    },
+   
     "pant-back-details": {
         keys: [
             { t: 0, v: 0 },
@@ -108,24 +91,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 987.2, y: 681.184542, type: "corner" }
     },
-    "shoe-back": {
-        keys: [
-            { t: 0, v: 0 },
-            { t: 900, v: 6.426719 },
-            { t: 1900, v: 11.916115 },
-            { t: 3000, v: 0.923514 },
-        ],
-        origin: { x: 987.2, y: 681.184542, type: "corner" }
-    },
-    "leg-back": {
-        keys: [
-            { t: 0, v: 0 },
-            { t: 900, v: 6.426719 },
-            { t: 1900, v: 11.916115 },
-            { t: 3000, v: 0.923514 },
-        ],
-        origin: { x: 987.2, y: 681.184542, type: "corner" }
-    },
+    
 };
 
 

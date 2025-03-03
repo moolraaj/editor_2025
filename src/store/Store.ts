@@ -763,7 +763,6 @@ export class Store {
   applyHandstandAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
 
-    // Clear previous animations.
     this.currentAnimations = [];
 
     console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
@@ -775,6 +774,8 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
+      targetElement.set({ originX: 'center', originY: 'top' });
+
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
