@@ -7,7 +7,7 @@ import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
 import { handstandAnimation, walkingAnimations } from '@/utils/animations';
-import { HANDSTAND, WALKING } from '@/utils/constants';
+import { HANDSTAND, setCustomOrigin, WALKING } from '@/utils/constants';
 
 
 
@@ -760,23 +760,59 @@ export class Store {
 
 
 
+  // applyHandstandAnimation(svgElement: fabric.Group) {
+  //   if (!svgElement) return;
+
+  //   this.currentAnimations = [];
+
+  //   console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
+  //   console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
+
+  //   Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
+  //     const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+  //     if (!targetElement) {
+  //       console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+  //       return;
+  //     }
+  //     targetElement.set({ originX: 'center', originY: 'top' });
+
+  //     console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+  //     const animInstance = anime({
+  //       targets: { angle: targetElement.angle || 0 },
+  //       angle: animationData.keys.map(k => k.v),
+  //       duration: 3000,
+  //       easing: "linear",
+  //       loop: true,
+  //       update: (anim) => {
+  //         targetElement.set("angle", Number(anim.animations[0].currentValue));
+  //         this.canvas?.renderAll();
+          
+  //       },
+      
+  //     });
+  //     this.currentAnimations.push(animInstance);
+  //   });
+  // }
+
+
   applyHandstandAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
 
+    this.currentAnimations.forEach(anim => anim.pause());
     this.currentAnimations = [];
 
-    console.log(`🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`);
-    console.log("🔍 Available SVG Parts:", svgElement.getObjects().map(obj => obj.name));
-
+    const allObjects = this.getAllObjectsRecursively(svgElement);
+    console.log("🔍 All nested SVG Parts:", allObjects.map(obj => obj.name));
+  
+ 
+    const customOrigin = { x: -486, y: -1284 };
     Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
-      const targetElement = svgElement.getObjects().find(obj => obj.name === partId);
+      const targetElement = allObjects.find(obj => obj.name === partId);
       if (!targetElement) {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-      targetElement.set({ originX: 'center', originY: 'top' });
-
-      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+      setCustomOrigin(targetElement, customOrigin);
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map(k => k.v),
@@ -786,9 +822,7 @@ export class Store {
         update: (anim) => {
           targetElement.set("angle", Number(anim.animations[0].currentValue));
           this.canvas?.renderAll();
-          
         },
-      
       });
       this.currentAnimations.push(animInstance);
     });
