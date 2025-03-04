@@ -106,7 +106,7 @@ export const handstandAnimation = {
             { t: 2300, v: -60.488341 },
             { t: 3000, v: 2.015952 },
         ],
-        origin: { x: 933.544556, y: 375.9555 },
+       
     },
     "hand-details-front": {
         keys: [
@@ -117,7 +117,7 @@ export const handstandAnimation = {
             { t: 2300, v: -43.159225 },
             { t: 3000, v: 5.235948 },
         ],
-        origin: { x: 933.544556, y: 381.769245 },
+       
     },
 };
 

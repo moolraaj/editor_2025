@@ -774,7 +774,12 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-      // targetElement.set({ originX: 'center', originY: 'top' });
+
+      targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
+
+
+      
+
 
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
       const animInstance = anime({
@@ -786,9 +791,9 @@ export class Store {
         update: (anim) => {
           targetElement.set("angle", Number(anim.animations[0].currentValue));
           this.canvas?.renderAll();
-          
+
         },
-      
+
       });
       this.currentAnimations.push(animInstance);
     });
@@ -942,11 +947,24 @@ export class Store {
         const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
         const svgRoot = svgDoc.documentElement;
 
-
-
         // Ensure the SVG has an xmlns attribute
         if (!svgRoot.hasAttribute("xmlns")) {
           svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+        }
+
+        // Remove unwanted attributes from the group with id="path68"
+        const targetGroup = svgDoc.getElementById("path68");
+        if (targetGroup) {
+          // Remove transform attribute from the group itself
+          targetGroup.removeAttribute("transform");
+
+          // Remove style and transform attributes from all descendant <path> elements
+          const pathElements = targetGroup.getElementsByTagName("path");
+          for (let i = 0; i < pathElements.length; i++) {
+            pathElements[i].removeAttribute("style");
+            
+          }
+          console.log("Removed transform and style attributes from group path68 and its child paths");
         }
 
         // 2) Load the parsed SVG into Fabric
@@ -967,14 +985,10 @@ export class Store {
             }
           });
 
-
-
           // We'll collect all parts (with IDs) in this array, mainly for debugging.
           const allParts: { id: string; obj: fabric.Object }[] = [];
 
           // 3) Recursive function to rebuild the group structure from the DOM
-          // Recursive function to rebuild the nested structure.
-          // It sets a custom name for each element.
           const rebuildFabricObjectFromElement = (element: Element): fabric.Object | null => {
             const nodeName = element.nodeName.toLowerCase();
             let result: fabric.Object | null = null;
@@ -992,14 +1006,15 @@ export class Store {
               const groupId = rawGroupId || `group-${getUid()}`;
               const groupName = rawGroupId || `unnamed-group-${groupId}`;
               const group = new fabric.Group(childFabricObjects, {
-
                 name: groupName,
                 selectable: true,
               });
               group.toSVG = function () {
                 const objectsSVG = this.getObjects().map((obj) => obj.toSVG()).join("");
-                return `<g id="${groupId}">${objectsSVG}</g>`;
+                const cleanedSVG = objectsSVG.replace(/ (transform|style)="[^"]*"/g, "");
+                return `<g id="${groupId}">${cleanedSVG}</g>`;
               };
+
               result = group;
             } else if (nodeName === "path") {
               const rawPathId = element.getAttribute("id");
@@ -1010,7 +1025,6 @@ export class Store {
               } else {
                 // Create a dummy Fabric.Path with a fallback name.
                 result = new fabric.Path("", {
-
                   name: rawPathId || `unnamed-path-${pathId}`,
                   selectable: true,
                 });
@@ -1033,7 +1047,6 @@ export class Store {
             return result;
           };
 
-
           // 4) Rebuild the top-level objects from <svg> children
           const topLevelFabricObjects: fabric.Object[] = [];
           Array.from(svgRoot.children).forEach(child => {
@@ -1047,7 +1060,6 @@ export class Store {
 
           // 5) Optionally combine them into one top-level group
           const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
-
             name: "full-svg",
             selectable: true
           });
@@ -1081,8 +1093,6 @@ export class Store {
 
           // 8) Now enumerate *all* nested objects if you want to show them in the UI
           const allNestedObjects = this.getAllObjectsRecursively(fullSvgGroup);
-          // 'allNestedObjects' is an array of every path/group, at every level.
-          // You can store or pass this to your UI. Example:
           console.log("🔎 All nested objects (including sub-groups and paths):", allNestedObjects);
 
           // 9) Create your editor element
@@ -1117,8 +1127,6 @@ export class Store {
       })
       .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
-
-
 
 
 
