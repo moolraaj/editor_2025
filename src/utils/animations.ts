@@ -72,7 +72,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 936.9, y: 687.070066, type: "corner" }
     },
-   
+
     "pant-back-details": {
         keys: [
             { t: 0, v: 0 },
@@ -91,7 +91,7 @@ export const walkingAnimations = {
         ],
         origin: { x: 987.2, y: 681.184542, type: "corner" }
     },
-    
+
 };
 
 
@@ -106,7 +106,7 @@ export const handstandAnimation = {
             { t: 2300, v: -60.488341 },
             { t: 3000, v: 2.015952 },
         ],
-       
+
     },
     "hand-details-front": {
         keys: [
@@ -117,7 +117,7 @@ export const handstandAnimation = {
             { t: 2300, v: -43.159225 },
             { t: 3000, v: 5.235948 },
         ],
-       
+
     },
 };
 
@@ -128,12 +128,12 @@ export const colorMap: Record<string, string> = {
     svg: "rgba(135, 207, 235, 0.72)",
     video: "rgba(144, 238, 144, 0.73)",
     image: "rgba(255, 182, 193, 0.78)",
-  };
+};
+export const MAX_SCALE = 0.35;
 
 
 
 
- 
 
 
- 
+

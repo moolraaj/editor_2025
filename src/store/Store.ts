@@ -6,7 +6,7 @@ import { MenuOption, EditorElement, Animation, TimeFrame, VideoEditorElement, Au
 import { FabricUitls } from '@/utils/fabric-utils';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
-import { handstandAnimation, walkingAnimations } from '@/utils/animations';
+import { handstandAnimation, MAX_SCALE, walkingAnimations } from '@/utils/animations';
 import { HANDSTAND, WALKING } from '@/utils/constants';
 
 
@@ -929,7 +929,6 @@ export class Store {
 
   addSvg(index: number) {
     console.log("Adding SVG:", index);
-
     const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement | null;
     if (!svgElement) {
       console.error("SVG Element not found:", `svg-${index}`);
@@ -938,6 +937,7 @@ export class Store {
     const id = getUid();
     const parser = new DOMParser();
     const serializer = new XMLSerializer();
+
     fetch(svgElement.src)
       .then(response => response.text())
       .then(svgText => {
@@ -951,7 +951,7 @@ export class Store {
             console.error("🚨 Failed to load SVG objects");
             return;
           }
-          console.log("🖌️ Fabric.js Parsed Objects (Before Grouping):", objects);
+          console.log("Fabric.js Parsed Objects (Before Grouping):", objects);
           const objectMap = new Map<string, fabric.Object>();
           objects.forEach(obj => {
             const fabricObj = obj as any;
@@ -959,12 +959,10 @@ export class Store {
               objectMap.set(fabricObj.id, fabricObj);
             }
           });
-
           const allParts: { id: string; obj: fabric.Object }[] = [];
           const rebuildFabricObjectFromElement = (element: Element): fabric.Object | null => {
             const nodeName = element.nodeName.toLowerCase();
             let result: fabric.Object | null = null;
-
             if (nodeName === "g") {
               const childFabricObjects: fabric.Object[] = [];
               Array.from(element.children).forEach((child) => {
@@ -977,7 +975,6 @@ export class Store {
               const groupId = rawGroupId || `group-${getUid()}`;
               const groupName = rawGroupId || `unnamed-group-${groupId}`;
               const group = new fabric.Group(childFabricObjects, {
-
                 name: groupName,
                 selectable: true,
               });
@@ -994,7 +991,6 @@ export class Store {
                 result.set("name", rawPathId);
               } else {
                 result = new fabric.Path("", {
-
                   name: rawPathId || `unnamed-path-${pathId}`,
                   selectable: true,
                 });
@@ -1013,7 +1009,6 @@ export class Store {
             }
             return result;
           };
-
           const topLevelFabricObjects: fabric.Object[] = [];
           Array.from(svgRoot.children).forEach(child => {
             const obj = rebuildFabricObjectFromElement(child);
@@ -1021,17 +1016,16 @@ export class Store {
               topLevelFabricObjects.push(obj);
             }
           });
+          console.log("Complete list of all parts:", allParts.map(p => p.id));
           const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
-
             name: "full-svg",
-            selectable: true
+            selectable: true,
           });
           const scaleFactor = 0.3;
           const canvasWidth = this.canvas?.width ?? 800;
           const canvasHeight = this.canvas?.height ?? 600;
           const groupWidth = fullSvgGroup.width || 0;
           const groupHeight = fullSvgGroup.height || 0;
-
           fullSvgGroup.set({
             left: canvasWidth / 2 - (groupWidth * scaleFactor) / 2,
             top: canvasHeight / 2 - (groupHeight * scaleFactor) / 2,
@@ -1040,10 +1034,13 @@ export class Store {
             selectable: true,
             hasControls: true
           });
-
           this.canvas?.add(fullSvgGroup);
           this.canvas?.renderAll();
-
+          console.log("SVG Added to Canvas. Canvas Objects:", this.canvas?.getObjects());
+          const addedSvg = fullSvgGroup.toSVG();
+          console.log("Full SVG Group as SVG:\n", addedSvg);
+          const allNestedObjects = this.getAllObjectsRecursively(fullSvgGroup);
+          console.log("All nested objects:", allNestedObjects);
           const editorElement: SvgEditorElement = {
             id,
             name: `SVG ${index + 1}`,
@@ -1055,24 +1052,40 @@ export class Store {
               height: groupHeight * scaleFactor,
               rotation: 0,
               scaleX: fullSvgGroup.scaleX ?? 1,
-              scaleY: fullSvgGroup.scaleY ?? 1
+              scaleY: fullSvgGroup.scaleY ?? 1,
             },
             timeFrame: {
               start: 0,
-              end: this.maxTime
+              end: this.maxTime,
             },
             properties: {
               elementId: `svg-${id}`,
-              src: svgElement.src
+              src: svgElement.src,
             },
-            fabricObject: fullSvgGroup
+            fabricObject: fullSvgGroup,
           };
           this.addEditorElement(editorElement);
           this.setSelectedElement(editorElement);
         });
       })
-      .catch(error => console.error("⚠️ Error fetching SVG:", error));
+      .catch(error => console.error("Error fetching SVG:", error));
+
+
+    this.canvas?.on("object:scaling", (e) => {
+      const obj = e.target;
+      if (!obj) return;
+      const currentScaleX = obj.scaleX ?? 1;
+      const currentScaleY = obj.scaleY ?? 1;
+      if (currentScaleX > MAX_SCALE) obj.scaleX = MAX_SCALE;
+      if (currentScaleY > MAX_SCALE) obj.scaleY = MAX_SCALE;
+      this.canvas?.renderAll();
+    });
   }
+
+
+
+
+
 
 
 
