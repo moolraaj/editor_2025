@@ -129,7 +129,7 @@ export const colorMap: Record<string, string> = {
     video: "rgba(144, 238, 144, 0.73)",
     image: "rgba(255, 182, 193, 0.78)",
 };
-export const MAX_SCALE = 0.35;
+export const MAX_SCALE = 0.29;
 
 
 

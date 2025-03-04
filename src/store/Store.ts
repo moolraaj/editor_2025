@@ -774,13 +774,7 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-
       targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
-
-
-
-
-
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
@@ -1021,7 +1015,7 @@ export class Store {
             name: "full-svg",
             selectable: true,
           });
-          const scaleFactor = 0.3;
+          const scaleFactor = MAX_SCALE;
           const canvasWidth = this.canvas?.width ?? 800;
           const canvasHeight = this.canvas?.height ?? 600;
           const groupWidth = fullSvgGroup.width || 0;
@@ -1051,8 +1045,8 @@ export class Store {
               width: groupWidth * scaleFactor,
               height: groupHeight * scaleFactor,
               rotation: 0,
-              scaleX: fullSvgGroup.scaleX ?? 1,
-              scaleY: fullSvgGroup.scaleY ?? 1,
+              scaleX: fullSvgGroup.scaleX ?? MAX_SCALE,
+              scaleY: fullSvgGroup.scaleY ?? MAX_SCALE,
             },
             timeFrame: {
               start: 0,
@@ -1074,8 +1068,8 @@ export class Store {
     this.canvas?.on("object:scaling", (e) => {
       const obj = e.target;
       if (!obj) return;
-      const currentScaleX = obj.scaleX ?? 1;
-      const currentScaleY = obj.scaleY ?? 1;
+      const currentScaleX = obj.scaleX ?? MAX_SCALE;
+      const currentScaleY = obj.scaleY ?? MAX_SCALE;
       if (currentScaleX > MAX_SCALE) obj.scaleX = MAX_SCALE;
       if (currentScaleY > MAX_SCALE) obj.scaleY = MAX_SCALE;
       this.canvas?.renderAll();
