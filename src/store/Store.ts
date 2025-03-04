@@ -795,6 +795,14 @@ export class Store {
   }
 
 
+
+
+
+
+
+
+
+
   startedTime = 0;
   startedTimePlay = 0;
 
@@ -1111,6 +1119,10 @@ export class Store {
   }
 
 
+
+
+
+
   getAllObjectsRecursively(obj: fabric.Object): fabric.Object[] {
     let results: fabric.Object[] = [obj];
     if (obj.type === "group") {
@@ -1229,11 +1241,11 @@ export class Store {
       .forEach((element) => {
         const audio = document.getElementById(element.properties.elementId) as HTMLAudioElement | null;
         if (!audio) return;
-  
+
         const { start, end } = element.timeFrame;
         const currentTimeMs = this.currentTimeInMs;
         const isWithinRange = currentTimeMs >= start && currentTimeMs <= end;
-  
+
         if (this.playing && isWithinRange) {
           if (!(element.properties as any).isAudioPlaying) {
             const audioTime = (currentTimeMs - start) / 1000;
@@ -1250,12 +1262,12 @@ export class Store {
         }
       });
   }
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   // saveCanvasToVideo() {
   //   const video = document.createElement("video");
   //   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -1541,9 +1553,9 @@ export class Store {
           });
           break;
         }
-     
+
         case "audio": {
-         
+
           const rect = new fabric.Rect({
             left: element.placement.x,
             top: element.placement.y,
@@ -1552,26 +1564,26 @@ export class Store {
             fill: "transparent",
             selectable: true,
           });
-        
+
           const label = new fabric.Text("Audio", {
             left: element.placement.x + 5,
             top: element.placement.y + 5,
             fontSize: 16,
-            fontWeight:600,
+            fontWeight: 600,
             fill: "green",
             selectable: false,
           });
-         
+
           const audioGroup = new fabric.Group([rect, label], {
             left: element.placement.x,
             top: element.placement.y,
             selectable: true,
           });
-        
+
           element.fabricObject = audioGroup;
           canvas.add(audioGroup);
 
-       
+
           canvas.on("object:modified", function (e) {
             if (!e.target) return;
             const target = e.target;
@@ -1593,7 +1605,7 @@ export class Store {
             };
             store.updateEditorElement(newElement);
           });
-          
+
           break;
         }
 
