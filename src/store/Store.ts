@@ -923,11 +923,13 @@ export class Store {
 
   addSvg(index: number) {
     console.log("Adding SVG:", index);
+
     const svgElement = document.getElementById(`svg-${index}`) as HTMLImageElement | null;
     if (!svgElement) {
       console.error("SVG Element not found:", `svg-${index}`);
       return;
     }
+
     const id = getUid();
     const parser = new DOMParser();
     const serializer = new XMLSerializer();
@@ -935,17 +937,27 @@ export class Store {
     fetch(svgElement.src)
       .then(response => response.text())
       .then(svgText => {
+        // 1) Parse the original SVG document
         const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
         const svgRoot = svgDoc.documentElement;
+
+
+
+        // Ensure the SVG has an xmlns attribute
         if (!svgRoot.hasAttribute("xmlns")) {
           svgRoot.setAttribute("xmlns", "http://www.w3.org/2000/svg");
         }
+
+        // 2) Load the parsed SVG into Fabric
         fabric.loadSVGFromString(serializer.serializeToString(svgRoot), (objects, options) => {
           if (!objects || objects.length === 0) {
             console.error("🚨 Failed to load SVG objects");
             return;
           }
-          console.log("Fabric.js Parsed Objects (Before Grouping):", objects);
+
+          console.log("🖌️ Fabric.js Parsed Objects (Before Grouping):", objects);
+
+          // Build a map from each Fabric object's id -> the Fabric object
           const objectMap = new Map<string, fabric.Object>();
           objects.forEach(obj => {
             const fabricObj = obj as any;
@@ -953,10 +965,19 @@ export class Store {
               objectMap.set(fabricObj.id, fabricObj);
             }
           });
+
+
+
+          // We'll collect all parts (with IDs) in this array, mainly for debugging.
           const allParts: { id: string; obj: fabric.Object }[] = [];
+
+          // 3) Recursive function to rebuild the group structure from the DOM
+          // Recursive function to rebuild the nested structure.
+          // It sets a custom name for each element.
           const rebuildFabricObjectFromElement = (element: Element): fabric.Object | null => {
             const nodeName = element.nodeName.toLowerCase();
             let result: fabric.Object | null = null;
+
             if (nodeName === "g") {
               const childFabricObjects: fabric.Object[] = [];
               Array.from(element.children).forEach((child) => {
@@ -965,10 +986,12 @@ export class Store {
                   childFabricObjects.push(childObj);
                 }
               });
+              // Use the group's id if available; otherwise, assign a fallback.
               const rawGroupId = element.getAttribute("id");
               const groupId = rawGroupId || `group-${getUid()}`;
               const groupName = rawGroupId || `unnamed-group-${groupId}`;
               const group = new fabric.Group(childFabricObjects, {
+
                 name: groupName,
                 selectable: true,
               });
@@ -982,9 +1005,11 @@ export class Store {
               const pathId = rawPathId || `path-${getUid()}`;
               if (rawPathId && objectMap.has(rawPathId)) {
                 result = objectMap.get(rawPathId)!;
-                result.set("name", rawPathId);
+                result.set("name", rawPathId); // Use the original id
               } else {
+                // Create a dummy Fabric.Path with a fallback name.
                 result = new fabric.Path("", {
+
                   name: rawPathId || `unnamed-path-${pathId}`,
                   selectable: true,
                 });
@@ -992,10 +1017,13 @@ export class Store {
             } else {
               return null;
             }
+
+            // Ensure the name property is set (fallback if empty).
             if (result) {
               if (!result.name || result.name.trim() === "") {
                 result.set("name", nodeName === "g" ? `unnamed-group-${(result as any).id}` : `unnamed-path-${(result as any).id}`);
               }
+              // Save the object in our parts list.
               const resultId = (result as any).id;
               if (resultId) {
                 allParts.push({ id: resultId, obj: result });
@@ -1003,6 +1031,9 @@ export class Store {
             }
             return result;
           };
+
+
+          // 4) Rebuild the top-level objects from <svg> children
           const topLevelFabricObjects: fabric.Object[] = [];
           Array.from(svgRoot.children).forEach(child => {
             const obj = rebuildFabricObjectFromElement(child);
@@ -1010,16 +1041,23 @@ export class Store {
               topLevelFabricObjects.push(obj);
             }
           });
-          console.log("Complete list of all parts:", allParts.map(p => p.id));
+
+          console.log("Complete list of all parts (groups & paths):", allParts.map(p => p.id));
+
+          // 5) Optionally combine them into one top-level group
           const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
+
             name: "full-svg",
-            selectable: true,
+            selectable: true
           });
-          const scaleFactor = MAX_SCALE;
+
+          // 6) Position and scale the group
+          const scaleFactor = 0.3;
           const canvasWidth = this.canvas?.width ?? 800;
           const canvasHeight = this.canvas?.height ?? 600;
           const groupWidth = fullSvgGroup.width || 0;
           const groupHeight = fullSvgGroup.height || 0;
+
           fullSvgGroup.set({
             left: canvasWidth / 2 - (groupWidth * scaleFactor) / 2,
             top: canvasHeight / 2 - (groupHeight * scaleFactor) / 2,
@@ -1028,13 +1066,25 @@ export class Store {
             selectable: true,
             hasControls: true
           });
+
+          // 7) Add the group to the canvas
           this.canvas?.add(fullSvgGroup);
           this.canvas?.renderAll();
-          console.log("SVG Added to Canvas. Canvas Objects:", this.canvas?.getObjects());
+
+          console.log("✅ SVG Added to Canvas. Canvas Objects:", this.canvas?.getObjects());
+
+          // For debugging, see the final nested group as SVG
           const addedSvg = fullSvgGroup.toSVG();
-          console.log("Full SVG Group as SVG:\n", addedSvg);
+          console.log("🖼️ Full SVG Group as SVG:\n", addedSvg);
+          console.log("Available SVG Parts for Animation:", allParts.map(p => p.id));
+
+          // 8) Now enumerate *all* nested objects if you want to show them in the UI
           const allNestedObjects = this.getAllObjectsRecursively(fullSvgGroup);
-          console.log("All nested objects:", allNestedObjects);
+          // 'allNestedObjects' is an array of every path/group, at every level.
+          // You can store or pass this to your UI. Example:
+          console.log("🔎 All nested objects (including sub-groups and paths):", allNestedObjects);
+
+          // 9) Create your editor element
           const editorElement: SvgEditorElement = {
             id,
             name: `SVG ${index + 1}`,
@@ -1045,35 +1095,26 @@ export class Store {
               width: groupWidth * scaleFactor,
               height: groupHeight * scaleFactor,
               rotation: 0,
-              scaleX: fullSvgGroup.scaleX ?? MAX_SCALE,
-              scaleY: fullSvgGroup.scaleY ?? MAX_SCALE,
+              scaleX: fullSvgGroup.scaleX ?? 1,
+              scaleY: fullSvgGroup.scaleY ?? 1
             },
             timeFrame: {
               start: 0,
-              end: this.maxTime,
+              end: this.maxTime
             },
             properties: {
               elementId: `svg-${id}`,
-              src: svgElement.src,
+              src: svgElement.src
             },
-            fabricObject: fullSvgGroup,
+            fabricObject: fullSvgGroup
           };
+
+          // Save it in your store or local array
           this.addEditorElement(editorElement);
           this.setSelectedElement(editorElement);
         });
       })
-      .catch(error => console.error("Error fetching SVG:", error));
-
-
-    this.canvas?.on("object:scaling", (e) => {
-      const obj = e.target;
-      if (!obj) return;
-      const currentScaleX = obj.scaleX ?? MAX_SCALE;
-      const currentScaleY = obj.scaleY ?? MAX_SCALE;
-      if (currentScaleX > MAX_SCALE) obj.scaleX = MAX_SCALE;
-      if (currentScaleY > MAX_SCALE) obj.scaleY = MAX_SCALE;
-      this.canvas?.renderAll();
-    });
+      .catch(error => console.error("⚠️ Error fetching SVG:", error));
   }
 
 
