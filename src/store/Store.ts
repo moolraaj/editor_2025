@@ -835,6 +835,7 @@ export class Store {
       }
     )
     this.updateAudioElements();
+    this.updateVideoElements()
 
   }
 
@@ -1181,23 +1182,38 @@ export class Store {
   }
 
   updateVideoElements() {
-    this.editorElements.filter(
-      (element): element is VideoEditorElement =>
-        element.type === "video"
-    )
+    this.editorElements
+      .filter((element): element is VideoEditorElement => element.type === "video")
       .forEach((element) => {
-        const video = document.getElementById(element.properties.elementId);
-        if (isHtmlVideoElement(video)) {
-          const videoTime = (this.currentTimeInMs - element.timeFrame.start) / 1000;
-          video.currentTime = videoTime;
-          if (this.playing) {
-            video.play();
-          } else {
+        const video = document.getElementById(element.properties.elementId) as HTMLVideoElement | null;
+        if (!video || !isHtmlVideoElement(video)) return;
+
+        const { start, end } = element.timeFrame;
+        const current = this.currentTimeInMs;
+        const inRange = current >= start && current < end;
+        if (!inRange) {
+          if (!video.paused) {
+            video.pause();
+          }
+          return;
+        }
+        const desiredTime = (current - start) / 1000;
+        const clampedTime = Math.max(0, desiredTime);
+        if (!video.seeking && Math.abs(video.currentTime - clampedTime) > 0.2) {
+          video.currentTime = clampedTime;
+        }
+        if (this.playing) {
+          if (video.paused) {
+            video.play().catch(err => console.error("Error playing video:", err));
+          }
+        } else {
+          if (!video.paused) {
             video.pause();
           }
         }
-      })
+      });
   }
+
   updateAudioElements() {
     this.editorElements
       .filter((element): element is AudioEditorElement => element.type === "audio")
