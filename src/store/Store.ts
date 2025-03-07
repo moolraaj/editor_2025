@@ -477,7 +477,7 @@ export class Store {
             // @ts-ignore
             editorElement.properties.splittedTexts =
               getTextObjectsPartitionedByCharacters(
-                editorElement.fabricObject,
+                editorElement.fabricObject as fabric.IText,
                 editorElement
               )
             editorElement.properties.splittedTexts.forEach((textObject) => {
