@@ -27,6 +27,7 @@ export const ALL_FONTS: string[] = [
 
 export const WALKING:string='walking'
 export const HANDSTAND:string='handstand'
+export const VIDEO_EXPORT_LENGTH=600
 
 
 

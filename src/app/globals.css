@@ -7,6 +7,10 @@ body {
   height: 100%;
 }
 
+.section_bottom_margin {
+  padding: 0px 0px 40px 0px;
+}
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;

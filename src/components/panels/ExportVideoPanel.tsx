@@ -2,6 +2,7 @@
 import React from "react";
 import { StoreContext } from "@/store";
 import { observer } from "mobx-react-lite";
+import { VIDEO_EXPORT_LENGTH } from "@/utils/constants";
 
 export const ExportVideoPanel = observer(() => {
   const store = React.useContext(StoreContext);
@@ -9,28 +10,38 @@ export const ExportVideoPanel = observer(() => {
   return (
     <>
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
-        Export
+        Export Activities
       </div>
-      {/* Set max time from number input */}
+
       <div className="px-[16px]">
-        <div className="flex flex-row items-center my-2 text-white">
+        <div className="flex flex-row items-center my-2 text-white section_bottom_margin">
           <div className="text-xs font-semibold mr-2">Video Length</div>
-          <input
-            type="number"
-            className="text-black rounded text-center border-slate-200 placeholder-slate-400 contrast-more:border-slate-400 contrast-more:placeholder-slate-500 max-w-[50px] mr-2"
+          <select
+            className="text-black rounded text-center border-slate-200 placeholder-slate-400 contrast-more:border-slate-400 contrast-more:placeholder-slate-500 max-w-[80px] mr-2"
             value={store.maxTime / 1000}
             onChange={(e) => {
-              const value = e.target.value;
-              store.setMaxTime(Number(value) * 1000);
+              const seconds = Number(e.target.value);
+              store.setMaxTime(seconds * 1000);
             }}
-          />
-          <div>secs</div>
+          >
+            {Array.from({ length: VIDEO_EXPORT_LENGTH }, (_, i) => i + 1).map((sec) => (
+              <option key={sec} value={sec}>
+                {sec}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs">
+            {store.maxTime / 1000 === 1 ? 'sec' : 'secs'}
+          </div>
         </div>
-
       </div>
-      {/*  Format selection with radio button */}
+
+
+
+
+
       <div className="px-[16px] text-white">
-        <div className="text-xs font-semibold mr-2">Video Format</div>
+        <div className="text-xs font-semibold mr-2">Download Video Format</div>
         <div className="flex flex-row items-center my-2">
           <input
             type="radio"
@@ -42,7 +53,7 @@ export const ExportVideoPanel = observer(() => {
               store.setVideoFormat("mp4");
             }}
           />
-          <div className="text-xs mr-2">MP4</div>
+          <div className="text-xs mr-2">mp4 format</div>
           <input
             type="radio"
             className="mr-2"
@@ -53,7 +64,7 @@ export const ExportVideoPanel = observer(() => {
               store.setVideoFormat("webm");
             }}
           />
-          <div className="text-xs mr-2">webm</div>
+          <div className="text-xs mr-2">webm format</div>
         </div>
       </div>
 
@@ -68,7 +79,7 @@ export const ExportVideoPanel = observer(() => {
           }, 1000);
         }}
       >
-        Export Video ({store.maxTime / 1000} secs) {store.selectedVideoFormat === "mp4" ? ("ALPHA") : ""}
+        Download {store.selectedVideoFormat === "mp4" ? (`mp4 [${store.maxTime / 1000}] secs`) : (`webm [${store.maxTime / 1000}] secs`)}
       </button>
     </>
   );
