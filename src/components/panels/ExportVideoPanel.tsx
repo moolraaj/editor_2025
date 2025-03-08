@@ -8,6 +8,7 @@ export const ExportVideoPanel = observer(() => {
   const store = React.useContext(StoreContext);
 
   let seconds = store.maxTime / 1000 === 1 ? 'sec' : 'secs'
+  let maxtime=store.maxTime / 1000
    
 
   return (
@@ -21,7 +22,7 @@ export const ExportVideoPanel = observer(() => {
           <div className="text-xs font-semibold mr-2">Video Length</div>
           <select
             className="text-black rounded text-center border-slate-200 placeholder-slate-400 contrast-more:border-slate-400 contrast-more:placeholder-slate-500 max-w-[80px] mr-2"
-            value={store.maxTime / 1000}
+            value={maxtime}
             onChange={(e) => {
               const seconds = Number(e.target.value);
               store.setMaxTime(seconds * 1000);
@@ -82,7 +83,7 @@ export const ExportVideoPanel = observer(() => {
           }, 1000);
         }}
       >
-        Download {store.selectedVideoFormat === "mp4" ? (`mp4 (${store.maxTime / 1000})  ${seconds}`) : (`webm (${store.maxTime / 1000}) ${seconds}`)}
+        Download {store.selectedVideoFormat === "mp4" ? (`mp4 (${maxtime})  ${seconds}`) : (`webm (${maxtime}) ${seconds}`)}
       </button>
     </>
   );
