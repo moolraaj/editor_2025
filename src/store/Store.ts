@@ -854,21 +854,21 @@ export class Store {
 
   applyHandstandAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
-  
+
     // Cancel any previous animations.
     this.clearCurrentAnimations();
-  
+
     console.log(
       `🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`
     );
-  
+
     // Flatten the structure (using the same approach as in walking animation).
     const allObjects = this.getAllObjectsRecursively(svgElement);
     console.log(
       '🔍 Available SVG Parts:',
       allObjects.map((obj) => (obj as any).dataName || obj.name)
     );
-  
+
     Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
       const targetElement = allObjects.find(
         (obj) => ((obj as any).dataName || obj.name) === partId
@@ -877,17 +877,17 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-  
+
       // Reset the angle to ensure a clean start.
       targetElement.set('angle', 0);
-  
+
       // For the hand (or any other part that needs repositioning), adjust its origin once.
       if (partId === 'hand') {
         targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
       }
-      
+
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
-  
+
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map((k) => k.v),
@@ -1090,7 +1090,7 @@ export class Store {
                 const pathId = rawPathId || `path-${getUid()}`
                 if (rawPathId && objectMap.has(rawPathId)) {
                   result = objectMap.get(rawPathId)!
-                  result.set('name', rawPathId) 
+                  result.set('name', rawPathId)
                 } else {
                   result = new fabric.Path('', {
                     name: rawPathId || `unnamed-path-${pathId}`,
@@ -1130,7 +1130,7 @@ export class Store {
             const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
               name: 'full-svg',
               selectable: true,
-              
+
             })
             const scaleFactor = 0.3
             const canvasWidth = this.canvas?.width ?? 800
@@ -1146,7 +1146,7 @@ export class Store {
               selectable: true,
               hasControls: true,
               padding: 50,
-              objectCaching: false, 
+              objectCaching: false,
 
             })
 
@@ -1535,14 +1535,16 @@ export class Store {
           await ffmpeg.writeFile('video.webm', data)
           await ffmpeg.exec([
             '-y',
-            '-i',
-            'video.webm',
-            '-c:v',
-            'libx264',
-            '-c:a',
-            'aac',
+            '-i', 'video.webm',
+            '-vf', 'scale=320:-2',   
+            '-r', '15',             
+            '-c:v', 'mpeg4',        
+            '-qscale:v', '5',        
+            '-c:a', 'aac',
             'video.mp4',
-          ])
+          ]);
+          
+          
 
           const output = await ffmpeg.readFile('video.mp4')
           const outputBlob = new Blob([output], { type: 'video/mp4' })
