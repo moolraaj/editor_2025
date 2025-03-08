@@ -854,21 +854,21 @@ export class Store {
 
   applyHandstandAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
-
+  
     // Cancel any previous animations.
     this.clearCurrentAnimations();
-
+  
     console.log(
       `🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`
     );
-
+  
     // Flatten the structure (using the same approach as in walking animation).
     const allObjects = this.getAllObjectsRecursively(svgElement);
     console.log(
       '🔍 Available SVG Parts:',
       allObjects.map((obj) => (obj as any).dataName || obj.name)
     );
-
+  
     Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
       const targetElement = allObjects.find(
         (obj) => ((obj as any).dataName || obj.name) === partId
@@ -877,17 +877,17 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-
+  
       // Reset the angle to ensure a clean start.
       targetElement.set('angle', 0);
-
+  
       // For the hand (or any other part that needs repositioning), adjust its origin once.
       if (partId === 'hand') {
         targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
       }
-
+      
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
-
+  
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map((k) => k.v),
@@ -1037,30 +1037,18 @@ export class Store {
     fetch(svgElement.src)
       .then((response) => response.text())
       .then((svgText) => {
-        // 1) Parse the original SVG document
         const svgDoc = parser.parseFromString(svgText, 'image/svg+xml')
         const svgRoot = svgDoc.documentElement
-
-        // Ensure the SVG has an xmlns attribute
         if (!svgRoot.hasAttribute('xmlns')) {
           svgRoot.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
         }
-
-        // 2) Load the parsed SVG into Fabric
         fabric.loadSVGFromString(
           serializer.serializeToString(svgRoot),
-          (objects, options) => {
+          (objects) => {
             if (!objects || objects.length === 0) {
               console.error('🚨 Failed to load SVG objects')
               return
             }
-
-            console.log(
-              '🖌️ Fabric.js Parsed Objects (Before Grouping):',
-              objects
-            )
-
-            // Build a map from each Fabric object's id -> the Fabric object
             const objectMap = new Map<string, fabric.Object>()
             objects.forEach((obj) => {
               const fabricObj = obj as any
@@ -1068,13 +1056,7 @@ export class Store {
                 objectMap.set(fabricObj.id, fabricObj)
               }
             })
-
-            // We'll collect all parts (with IDs) in this array, mainly for debugging.
             const allParts: { id: string; obj: fabric.Object }[] = []
-
-            // 3) Recursive function to rebuild the group structure from the DOM
-            // Recursive function to rebuild the nested structure.
-            // It sets a custom name for each element.
             const rebuildFabricObjectFromElement = (
               element: Element
             ): fabric.Object | null => {
@@ -1089,7 +1071,6 @@ export class Store {
                     childFabricObjects.push(childObj)
                   }
                 })
-                // Use the group's id if available; otherwise, assign a fallback.
                 const rawGroupId = element.getAttribute('id')
                 const groupId = rawGroupId || `group-${getUid()}`
                 const groupName = rawGroupId || `unnamed-group-${groupId}`
@@ -1109,9 +1090,8 @@ export class Store {
                 const pathId = rawPathId || `path-${getUid()}`
                 if (rawPathId && objectMap.has(rawPathId)) {
                   result = objectMap.get(rawPathId)!
-                  result.set('name', rawPathId) // Use the original id
+                  result.set('name', rawPathId) 
                 } else {
-                  // Create a dummy Fabric.Path with a fallback name.
                   result = new fabric.Path('', {
                     name: rawPathId || `unnamed-path-${pathId}`,
                     selectable: true,
@@ -1120,8 +1100,6 @@ export class Store {
               } else {
                 return null
               }
-
-              // Ensure the name property is set (fallback if empty).
               if (result) {
                 if (!result.name || result.name.trim() === '') {
                   result.set(
@@ -1131,7 +1109,6 @@ export class Store {
                       : `unnamed-path-${(result as any).id}`
                   )
                 }
-                // Save the object in our parts list.
                 const resultId = (result as any).id
                 if (resultId) {
                   allParts.push({ id: resultId, obj: result })
@@ -1139,8 +1116,6 @@ export class Store {
               }
               return result
             }
-
-            // 4) Rebuild the top-level objects from <svg> children
             const topLevelFabricObjects: fabric.Object[] = []
             Array.from(svgRoot.children).forEach((child) => {
               const obj = rebuildFabricObjectFromElement(child)
@@ -1148,20 +1123,15 @@ export class Store {
                 topLevelFabricObjects.push(obj)
               }
             })
-
             console.log(
               'Complete list of all parts (groups & paths):',
               allParts.map((p) => p.id)
             )
-
-            // 5) Optionally combine them into one top-level group
             const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
               name: 'full-svg',
               selectable: true,
-
+              
             })
-
-            // 6) Position and scale the group
             const scaleFactor = 0.3
             const canvasWidth = this.canvas?.width ?? 800
             const canvasHeight = this.canvas?.height ?? 600
@@ -1176,34 +1146,29 @@ export class Store {
               selectable: true,
               hasControls: true,
               padding: 50,
-              objectCaching: false,
+              objectCaching: false, 
 
             })
+
             this.canvas?.add(fullSvgGroup)
             this.canvas?.renderAll()
+
             console.log(
               '✅ SVG Added to Canvas. Canvas Objects:',
               this.canvas?.getObjects()
             )
-
-            // For debugging, see the final nested group as SVG
             const addedSvg = fullSvgGroup.toSVG()
             console.log('🖼️ Full SVG Group as SVG:\n', addedSvg)
             console.log(
               'Available SVG Parts for Animation:',
               allParts.map((p) => p.id)
             )
-
-            // 8) Now enumerate *all* nested objects if you want to show them in the UI
             const allNestedObjects = this.getAllObjectsRecursively(fullSvgGroup)
-            // 'allNestedObjects' is an array of every path/group, at every level.
-            // You can store or pass this to your UI. Example:
             console.log(
               '🔎 All nested objects (including sub-groups and paths):',
               allNestedObjects
             )
 
-            // 9) Create your editor element
             const editorElement: SvgEditorElement = {
               id,
               name: `SVG ${index + 1}`,
