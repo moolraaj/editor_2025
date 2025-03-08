@@ -854,21 +854,21 @@ export class Store {
 
   applyHandstandAnimation(svgElement: fabric.Group) {
     if (!svgElement) return;
-  
+
     // Cancel any previous animations.
     this.clearCurrentAnimations();
-  
+
     console.log(
       `🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`
     );
-  
+
     // Flatten the structure (using the same approach as in walking animation).
     const allObjects = this.getAllObjectsRecursively(svgElement);
     console.log(
       '🔍 Available SVG Parts:',
       allObjects.map((obj) => (obj as any).dataName || obj.name)
     );
-  
+
     Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
       const targetElement = allObjects.find(
         (obj) => ((obj as any).dataName || obj.name) === partId
@@ -877,17 +877,17 @@ export class Store {
         console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
         return;
       }
-  
+
       // Reset the angle to ensure a clean start.
       targetElement.set('angle', 0);
-  
+
       // For the hand (or any other part that needs repositioning), adjust its origin once.
       if (partId === 'hand') {
         targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
       }
-      
+
       console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
-  
+
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map((k) => k.v),
@@ -1158,6 +1158,7 @@ export class Store {
             const fullSvgGroup = new fabric.Group(topLevelFabricObjects, {
               name: 'full-svg',
               selectable: true,
+
             })
 
             // 6) Position and scale the group
@@ -1175,12 +1176,11 @@ export class Store {
               selectable: true,
               hasControls: true,
               padding: 50,
-            })
+              objectCaching: false,
 
-            // 7) Add the group to the canvas
+            })
             this.canvas?.add(fullSvgGroup)
             this.canvas?.renderAll()
-
             console.log(
               '✅ SVG Added to Canvas. Canvas Objects:',
               this.canvas?.getObjects()
