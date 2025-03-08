@@ -7,6 +7,9 @@ import { VIDEO_EXPORT_LENGTH } from "@/utils/constants";
 export const ExportVideoPanel = observer(() => {
   const store = React.useContext(StoreContext);
 
+  let seconds = store.maxTime / 1000 === 1 ? 'sec' : 'secs'
+   
+
   return (
     <>
       <div className="text-sm px-[16px] pt-[16px] pb-[8px] font-semibold text-white">
@@ -31,7 +34,7 @@ export const ExportVideoPanel = observer(() => {
             ))}
           </select>
           <div className="text-xs">
-            {store.maxTime / 1000 === 1 ? 'sec' : 'secs'}
+            {seconds}
           </div>
         </div>
       </div>
@@ -79,7 +82,7 @@ export const ExportVideoPanel = observer(() => {
           }, 1000);
         }}
       >
-        Download {store.selectedVideoFormat === "mp4" ? (`mp4 [${store.maxTime / 1000}] secs`) : (`webm [${store.maxTime / 1000}] secs`)}
+        Download {store.selectedVideoFormat === "mp4" ? (`mp4 (${store.maxTime / 1000})  ${seconds}`) : (`webm (${store.maxTime / 1000}) ${seconds}`)}
       </button>
     </>
   );
