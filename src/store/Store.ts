@@ -1174,6 +1174,7 @@ export class Store {
               scaleY: scaleFactor,
               selectable: true,
               hasControls: true,
+              padding: 50,
             })
 
             // 7) Add the group to the canvas
