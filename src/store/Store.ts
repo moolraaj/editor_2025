@@ -266,24 +266,13 @@ export class Store {
     })
   }
 
-  assignAnimationToSelectedSvg(animationType: string) {
-    if (!this.selectedElement || this.selectedElement.type !== 'svg') {
-      console.warn('No SVG selected.')
-      return
-    }
-    this.selectedElement.properties.animationType = animationType
-    this.updateEditorElement(this.selectedElement)
 
-    console.log(
-      `Assigned animation: ${animationType} to ${this.selectedElement.id}`
-    )
-  }
 
   setFontSize(size: number) {
     if (!this.selectedElement || this.selectedElement.type !== 'text') return
 
     this.selectedElement.properties.fontSize = size
-    ;(this.selectedElement.fabricObject as fabric.Text)?.set('fontSize', size)
+      ; (this.selectedElement.fabricObject as fabric.Text)?.set('fontSize', size)
 
     this.updateEditorElement(this.selectedElement)
     this.canvas?.renderAll()
@@ -293,7 +282,7 @@ export class Store {
     if (!this.selectedElement || this.selectedElement.type !== 'text') return
 
     this.selectedElement.properties.textColor = color
-    ;(this.selectedElement.fabricObject as fabric.Text)?.set('fill', color)
+      ; (this.selectedElement.fabricObject as fabric.Text)?.set('fill', color)
 
     this.updateEditorElement(this.selectedElement)
     this.canvas?.renderAll()
@@ -304,10 +293,10 @@ export class Store {
 
     const isBold = this.selectedElement.properties.fontWeight === 'bold'
     this.selectedElement.properties.fontWeight = isBold ? 'normal' : 'bold'
-    ;(this.selectedElement.fabricObject as fabric.Text)?.set(
-      'fontWeight',
-      isBold ? 'normal' : 'bold'
-    )
+      ; (this.selectedElement.fabricObject as fabric.Text)?.set(
+        'fontWeight',
+        isBold ? 'normal' : 'bold'
+      )
 
     this.updateEditorElement(this.selectedElement)
     this.canvas?.renderAll()
@@ -318,10 +307,10 @@ export class Store {
 
     const isItalic = this.selectedElement.properties.fontStyle === 'italic'
     this.selectedElement.properties.fontStyle = isItalic ? 'normal' : 'italic'
-    ;(this.selectedElement.fabricObject as fabric.Text)?.set(
-      'fontStyle',
-      isItalic ? 'normal' : 'italic'
-    )
+      ; (this.selectedElement.fabricObject as fabric.Text)?.set(
+        'fontStyle',
+        isItalic ? 'normal' : 'italic'
+      )
 
     this.updateEditorElement(this.selectedElement)
     this.canvas?.renderAll()
@@ -331,10 +320,10 @@ export class Store {
     if (!this.selectedElement || this.selectedElement.type !== 'text') return
 
     this.selectedElement.properties.fontFamily = fontFamily
-    ;(this.selectedElement.fabricObject as fabric.Text)?.set(
-      'fontFamily',
-      fontFamily
-    )
+      ; (this.selectedElement.fabricObject as fabric.Text)?.set(
+        'fontFamily',
+        fontFamily
+      )
 
     this.updateEditorElement(this.selectedElement)
     this.canvas?.renderAll()
@@ -456,14 +445,14 @@ export class Store {
               direction === 'left'
                 ? -editorElement.placement.width
                 : direction === 'right'
-                ? this.canvas?.width
-                : editorElement.placement.x,
+                  ? this.canvas?.width
+                  : editorElement.placement.x,
             top:
               direction === 'top'
                 ? -editorElement.placement.height
                 : direction === 'bottom'
-                ? this.canvas?.height
-                : editorElement.placement.y,
+                  ? this.canvas?.height
+                  : editorElement.placement.y,
           }
           if (animation.properties.useClipPath) {
             const clipRectangle = FabricUitls.getClipMaskRect(editorElement, 50)
@@ -574,14 +563,14 @@ export class Store {
               direction === 'left'
                 ? -editorElement.placement.width
                 : direction === 'right'
-                ? this.canvas?.width
-                : editorElement.placement.x,
+                  ? this.canvas?.width
+                  : editorElement.placement.x,
             top:
               direction === 'top'
                 ? -100 - editorElement.placement.height
                 : direction === 'bottom'
-                ? this.canvas?.height
-                : editorElement.placement.y,
+                  ? this.canvas?.height
+                  : editorElement.placement.y,
           }
           if (animation.properties.useClipPath) {
             const clipRectangle = FabricUitls.getClipMaskRect(editorElement, 50)
@@ -727,29 +716,55 @@ export class Store {
     this.maxTime = maxTime
   }
 
-  applyWalkingAnimation(svgElement: fabric.Group) {
-    if (!svgElement) return
+  clearCurrentAnimations() {
+    if (this.currentAnimations && this.currentAnimations.length) {
+      this.currentAnimations.forEach((anim) => anim.pause());
+    }
+    this.currentAnimations = [];
+  }
 
-    // Clear any previous animations.
-    this.currentAnimations = []
+  assignAnimationToSelectedSvg(animationType: string) {
+    if (!this.selectedElement || this.selectedElement.type !== 'svg') {
+      console.warn('No SVG selected.');
+      return;
+    }
+
+    // Clear previous animation instances when reassigning.
+    this.clearCurrentAnimations();
+
+    // Set new animation type.
+    this.selectedElement.properties.animationType = animationType;
+    this.updateEditorElement(this.selectedElement);
+
+    console.log(
+      `Assigned animation: ${animationType} to ${this.selectedElement.id}`
+    );
+  }
+
+
+  applyWalkingAnimation(svgElement: fabric.Group) {
+    if (!svgElement) return;
+
+    // Cancel any previous animations.
+    this.clearCurrentAnimations();
 
     // Flatten the structure.
-    const allObjects = this.getAllObjectsRecursively(svgElement)
+    const allObjects = this.getAllObjectsRecursively(svgElement);
     console.log(
       'Available SVG Parts:',
       allObjects.map((obj) => (obj as any).dataName || obj.name)
-    )
+    );
 
     // Animate each part based on walkingAnimations.
     Object.entries(walkingAnimations).forEach(([partId, animationData]) => {
       const targetElement = allObjects.find(
         (obj) => ((obj as any).dataName || obj.name) === partId
-      )
+      );
       if (!targetElement) {
-        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`)
-        return
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
       }
-      console.log(`✅ Found SVG part: ${partId}, applying animation`)
+      console.log(`✅ Found SVG part: ${partId}, applying animation`);
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map((k) => k.v),
@@ -757,12 +772,12 @@ export class Store {
         easing: 'linear',
         loop: true,
         update: (anim) => {
-          targetElement.set('angle', Number(anim.animations[0].currentValue))
-          this.canvas?.renderAll()
+          targetElement.set('angle', Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
         },
-      })
-      this.currentAnimations.push(animInstance)
-    })
+      });
+      this.currentAnimations.push(animInstance);
+    });
 
     // Animate the whole group moving forward.
     const groupAnim = anime({
@@ -782,88 +797,97 @@ export class Store {
       ],
       loop: true,
       update: () => {
-        this.canvas?.renderAll()
+        this.canvas?.renderAll();
       },
-    })
-    this.currentAnimations.push(groupAnim)
+    });
+    this.currentAnimations.push(groupAnim);
   }
+
 
   playSelectedSvgAnimation() {
     if (!this.selectedElement || this.selectedElement.type !== 'svg') {
-      console.warn('⚠️ No SVG selected or invalid selection.')
-      return
+      console.warn('⚠️ No SVG selected or invalid selection.');
+      return;
     }
 
-    const animationType = this.selectedElement.properties.animationType
-    const fabricObject = this.selectedElement.fabricObject as fabric.Group
+    // Always clear previous animations before starting a new one.
+    this.clearCurrentAnimations();
+
+    const animationType = this.selectedElement.properties.animationType;
+    const fabricObject = this.selectedElement.fabricObject as fabric.Group;
 
     if (!fabricObject) {
-      console.warn('⚠️ No fabric object found for the selected SVG.')
-      return
+      console.warn('⚠️ No fabric object found for the selected SVG.');
+      return;
     }
 
     console.log(
       `🎬 Playing animation: ${animationType} for SVG ID: ${this.selectedElement.id}`
-    )
+    );
 
     if (animationType === WALKING) {
-      this.applyWalkingAnimation(fabricObject)
+      this.applyWalkingAnimation(fabricObject);
     } else if (animationType === HANDSTAND) {
-      this.applyHandstandAnimation(fabricObject)
+      this.applyHandstandAnimation(fabricObject);
     } else {
-      console.warn('⚠️ Invalid animation type. No animation applied.')
+      console.warn('⚠️ Invalid animation type. No animation applied.');
     }
   }
 
   setPlaying(playing: boolean) {
-    this.playing = playing
-    this.updateVideoElements()
-    this.updateAudioElements()
+    this.playing = playing;
+    this.updateVideoElements();
+    this.updateAudioElements();
     if (playing) {
-      // If we already have animations, resume them. Otherwise, start new ones.
-      if (this.currentAnimations.length > 0) {
-        this.currentAnimations.forEach((anim) => anim.play())
-      } else {
-        this.playSelectedSvgAnimation()
-      }
-      this.startedTime = Date.now()
-      this.startedTimePlay = this.currentTimeInMs
+      // Instead of resuming any previous animations, we always start the new one.
+      this.playSelectedSvgAnimation();
+      this.startedTime = Date.now();
+      this.startedTimePlay = this.currentTimeInMs;
       requestAnimationFrame(() => {
-        this.playFrames()
-      })
+        this.playFrames();
+      });
     } else {
       // Pause all running animations.
-      this.currentAnimations.forEach((anim) => anim.pause())
+      this.currentAnimations.forEach((anim) => anim.pause());
     }
   }
 
   applyHandstandAnimation(svgElement: fabric.Group) {
-    if (!svgElement) return
-
-    this.currentAnimations = []
-
+    if (!svgElement) return;
+  
+    // Cancel any previous animations.
+    this.clearCurrentAnimations();
+  
     console.log(
       `🤸 Handstand animation started for SVG ID: ${this.selectedElement?.id}`
-    )
+    );
+  
+    // Flatten the structure (using the same approach as in walking animation).
+    const allObjects = this.getAllObjectsRecursively(svgElement);
     console.log(
       '🔍 Available SVG Parts:',
-      svgElement.getObjects().map((obj) => obj.name)
-    )
-
+      allObjects.map((obj) => (obj as any).dataName || obj.name)
+    );
+  
     Object.entries(handstandAnimation).forEach(([partId, animationData]) => {
-      const targetElement = svgElement
-        .getObjects()
-        .find((obj) => obj.name === partId)
+      const targetElement = allObjects.find(
+        (obj) => ((obj as any).dataName || obj.name) === partId
+      );
       if (!targetElement) {
-        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`)
-        return
+        console.warn(`⚠️ Missing SVG part: ${partId}, skipping animation.`);
+        return;
       }
-      targetElement.setPositionByOrigin(
-        new fabric.Point(-1, -180),
-        'center',
-        'top'
-      )
-      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`)
+  
+      // Reset the angle to ensure a clean start.
+      targetElement.set('angle', 0);
+  
+      // For the hand (or any other part that needs repositioning), adjust its origin once.
+      if (partId === 'hand') {
+        targetElement.setPositionByOrigin(new fabric.Point(-1, -180), 'center', 'top');
+      }
+      
+      console.log(`✅ Found SVG part: ${partId}, applying handstand animation`);
+  
       const animInstance = anime({
         targets: { angle: targetElement.angle || 0 },
         angle: animationData.keys.map((k) => k.v),
@@ -871,12 +895,13 @@ export class Store {
         easing: 'linear',
         loop: true,
         update: (anim) => {
-          targetElement.set('angle', Number(anim.animations[0].currentValue))
-          this.canvas?.renderAll()
+          // Update the target's angle property on each frame.
+          targetElement.set('angle', Number(anim.animations[0].currentValue));
+          this.canvas?.renderAll();
         },
-      })
-      this.currentAnimations.push(animInstance)
-    })
+      });
+      this.currentAnimations.push(animInstance);
+    });
   }
 
   startedTime = 0
@@ -1342,13 +1367,13 @@ export class Store {
             audio
               .play()
               .catch((err) => console.warn('⚠️ Audio play error:', err))
-            ;(element.properties as any).isAudioPlaying = true
+              ; (element.properties as any).isAudioPlaying = true
           }
         } else {
           if ((element.properties as any).isAudioPlaying) {
             audio.pause()
             audio.currentTime = 0
-            ;(element.properties as any).isAudioPlaying = false
+              ; (element.properties as any).isAudioPlaying = false
           }
         }
       })
