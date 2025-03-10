@@ -1553,7 +1553,7 @@ export class Store {
           const output = await ffmpeg.readFile('video.mp4')
           const outputBlob = new Blob([output], { type: 'video/mp4' })
           const outputUrl = URL.createObjectURL(outputBlob)
-          hideLoading()
+          // hideLoading()
           const a = document.createElement('a')
           a.download = 'video.mp4'
           a.href = outputUrl
