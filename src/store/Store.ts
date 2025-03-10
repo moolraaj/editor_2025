@@ -1452,7 +1452,7 @@ export class Store {
   saveCanvasToVideoWithAudio() {
     this.saveCanvasToVideoWithAudioWebmMp4()
   }
-  
+
   saveCanvasToVideoWithAudioWebmMp4() {
     console.log('modified')
     let mp4 = this.selectedVideoFormat === 'mp4'
@@ -1460,24 +1460,24 @@ export class Store {
     const stream = canvas.captureStream(30)
     const audioElements = this.editorElements.filter(isEditorAudioElement)
     const audioStreams: MediaStream[] = []
-  
+
     if (!this.audioContext) {
       this.audioContext = new AudioContext()
     }
-  
+
     const audioContext = this.audioContext!
-  
+
     audioElements.forEach((audio) => {
       const audioElement = document.getElementById(
         audio.properties.elementId
       ) as HTMLAudioElement
-  
+
       let sourceNode = this.audioSourceNodes.get(audio.properties.elementId)
       if (!sourceNode) {
         sourceNode = audioContext.createMediaElementSource(audioElement)
         this.audioSourceNodes.set(audio.properties.elementId, sourceNode)
       }
-  
+
       if (!sourceNode) {
         console.error(
           'Error: sourceNode is undefined for',
@@ -1485,48 +1485,48 @@ export class Store {
         )
         return
       }
-  
+
       const dest = audioContext.createMediaStreamDestination()
       sourceNode.connect(dest)
       audioStreams.push(dest.stream)
     })
-  
+
     audioStreams.forEach((audioStream) => {
       if (audioStream.getAudioTracks().length > 0) {
         stream.addTrack(audioStream.getAudioTracks()[0])
       }
     })
-  
+
     const video = document.createElement('video')
     video.srcObject = stream
     video.height = canvas.height
     video.width = canvas.width
-  
-     
-  
-  
-    video.play().then(() => {
 
-  
+
+
+
+    video.play().then(() => {
+      console.log('Video is playing...')
+
       const mediaRecorder = new MediaRecorder(stream)
       const chunks: Blob[] = []
-  
+
       mediaRecorder.ondataavailable = function (e) {
         chunks.push(e.data)
         console.log('data available')
       }
-  
+
       mediaRecorder.onstop = async function () {
         const blob = new Blob(chunks, { type: 'video/webm' })
-  
+
         if (mp4) {
-          
+
           showLoading()
-  
+
           const data = new Uint8Array(await blob.arrayBuffer())
           const ffmpeg = new FFmpeg()
           const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd'
-  
+
           await ffmpeg.load({
             coreURL: await toBlobURL(
               `${baseURL}/ffmpeg-core.js`,
@@ -1549,7 +1549,6 @@ export class Store {
             'aac',
             'video.mp4',
           ])
-
           const output = await ffmpeg.readFile('video.mp4')
           const outputBlob = new Blob([output], { type: 'video/mp4' })
           const outputUrl = URL.createObjectURL(outputBlob)
@@ -1566,14 +1565,14 @@ export class Store {
           a.click()
         }
       }
-  
+
       mediaRecorder.start()
       setTimeout(() => {
         mediaRecorder.stop()
       }, this.maxTime)
     })
   }
-  
+
 
   refreshElements() {
     const store = this
@@ -1726,50 +1725,39 @@ export class Store {
             height: element.placement.height,
             fill: 'transparent',
             selectable: true,
-          })
+            hasControls: true,
+            lockScalingX: false,
+            lockScalingY: false,
 
-          const label = new fabric.Text('Audio', {
-            left: element.placement.x + 5,
-            top: element.placement.y + 5,
-            fontSize: 16,
-            fontWeight: 600,
-            fill: 'green',
-            selectable: false,
-          })
-
-          const audioGroup = new fabric.Group([rect, label], {
-            left: element.placement.x,
-            top: element.placement.y,
-            selectable: true,
-          })
-
-          element.fabricObject = audioGroup
-          canvas.add(audioGroup)
+          });
+          element.fabricObject = rect;
+          canvas.add(rect);
 
           canvas.on('object:modified', function (e) {
-            if (!e.target) return
-            const target = e.target
-            if (target !== audioGroup) return
-            const placement = element.placement
+            if (!e.target) return;
+            const target = e.target;
+            if (target !== rect) return;
+            const placement = element.placement;
             const newPlacement = {
               ...placement,
               x: target.left ?? placement.x,
               y: target.top ?? placement.y,
               rotation: target.angle ?? placement.rotation,
-              width: target.width ?? placement.width,
-              height: target.height ?? placement.height,
+              width: target.getScaledWidth() || placement.width,
+              height: target.getScaledHeight() || placement.height,
               scaleX: target.scaleX ?? placement.scaleX,
               scaleY: target.scaleY ?? placement.scaleY,
-            }
+            };
             const newElement = {
               ...element,
               placement: newPlacement,
-            }
-            store.updateEditorElement(newElement)
-          })
+            };
+            store.updateEditorElement(newElement);
+          });
 
-          break
+          break;
         }
+
 
         case 'svg': {
           if (!element.fabricObject) {
