@@ -168,18 +168,44 @@ export class Store {
 
   pasteElement() {
     if (!this.copiedElement) {
-      console.warn('⚠️ No copied layer! Copy one first.')
-      return
+      console.warn('⚠️ No copied layer! Copy one first.');
+      return;
     }
 
-    const elementToPaste = { ...this.copiedElement }
-    this.copiedElement = null
+    const elementToPaste = { ...this.copiedElement };
+    this.copiedElement = null;
 
     if (elementToPaste) {
       elementToPaste.fabricObject?.clone((cloned: fabric.Object) => {
         if (!cloned) {
-          console.error('❌ Failed to clone Fabric.js object.')
-          return
+          console.error('❌ Failed to clone Fabric.js object.');
+          return;
+        }
+        let newProperties = { ...elementToPaste.properties };
+
+        if (elementToPaste.type === 'audio') {
+          const newAudioId = getUid();
+          const newAudioElement = document.createElement('audio');
+          newAudioElement.id = `audio-${newAudioId}`;
+          newAudioElement.src = elementToPaste.properties.src;
+          document.body.appendChild(newAudioElement);
+          newProperties = {
+            ...newProperties,
+            elementId: newAudioElement.id,
+          };
+        }
+
+        if (elementToPaste.type === 'video') {
+          const newVideoId = getUid();
+          const newVideoElement = document.createElement('video');
+          newVideoElement.id = `video-${newVideoId}`;
+          newVideoElement.src = elementToPaste.properties.src;
+          newVideoElement.muted = false;
+          document.body.appendChild(newVideoElement);
+          newProperties = {
+            ...newProperties,
+            elementId: newVideoElement.id,
+          };
         }
 
         const newElement = {
@@ -195,19 +221,22 @@ export class Store {
             start: elementToPaste.timeFrame.start,
             end: elementToPaste.timeFrame.end,
           },
+          properties: newProperties,
           fabricObject: cloned,
-        } as EditorElement
+        } as EditorElement;
 
-        this.addEditorElement(newElement)
-        this.canvas?.add(cloned)
-        this.canvas?.renderAll()
+        this.addEditorElement(newElement);
+        this.canvas?.add(cloned);
+        this.canvas?.renderAll();
 
-        console.log('✅ Pasted Full Layer:', newElement.name)
-      })
+        console.log('✅ Pasted Full Layer:', newElement.name);
+      });
     } else {
-      console.warn('⚠️ Frame too small to paste!')
+      console.warn('⚠️ Frame too small to paste!');
     }
   }
+
+
 
   deleteElement() {
     if (!this.selectedElement) {
@@ -245,6 +274,33 @@ export class Store {
         console.error('❌ Failed to clone Fabric.js object.')
         return
       }
+      let newProperties = { ...selectedElement.properties }
+
+      if (selectedElement.type === 'audio') {
+        const newAudioId = getUid()
+        const newAudioElement = document.createElement('audio')
+        newAudioElement.id = `audio-${newAudioId}`
+        newAudioElement.src = selectedElement.properties.src
+        document.body.appendChild(newAudioElement)
+        newProperties = {
+          ...newProperties,
+          elementId: newAudioElement.id,
+        }
+      }
+
+      if (selectedElement.type === 'video') {
+        const newVideoId = getUid()
+        const newVideoElement = document.createElement('video')
+        newVideoElement.id = `video-${newVideoId}`
+        newVideoElement.src = selectedElement.properties.src
+        newVideoElement.muted = false
+        document.body.appendChild(newVideoElement)
+        newProperties = {
+          ...newProperties,
+          elementId: newVideoElement.id,
+        }
+      }
+
       const newElement = {
         ...selectedElement,
         id: getUid(),
@@ -256,7 +312,7 @@ export class Store {
           y: selectedElement.placement.y + 20,
         },
         timeFrame: { start: midTime, end: end },
-        properties: { ...selectedElement.properties },
+        properties: newProperties,
         fabricObject: cloned,
       } as EditorElement
       this.addEditorElement(newElement)
@@ -265,6 +321,8 @@ export class Store {
       this.refreshElements()
     })
   }
+
+
 
 
 
