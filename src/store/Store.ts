@@ -24,7 +24,7 @@ import { FabricUitls } from '@/utils/fabric-utils'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { toBlobURL } from '@ffmpeg/util'
 import { handstandAnimation, walkingAnimations } from '@/utils/animations'
-import { HANDSTAND, WALKING } from '@/utils/constants'
+import { HANDSTAND, hideLoading, showLoading, WALKING } from '@/utils/constants'
 
 export class Store {
   canvas: fabric.Canvas | null
@@ -1452,7 +1452,7 @@ export class Store {
   saveCanvasToVideoWithAudio() {
     this.saveCanvasToVideoWithAudioWebmMp4()
   }
-
+  
   saveCanvasToVideoWithAudioWebmMp4() {
     console.log('modified')
     let mp4 = this.selectedVideoFormat === 'mp4'
@@ -1460,24 +1460,24 @@ export class Store {
     const stream = canvas.captureStream(30)
     const audioElements = this.editorElements.filter(isEditorAudioElement)
     const audioStreams: MediaStream[] = []
-
+  
     if (!this.audioContext) {
       this.audioContext = new AudioContext()
     }
-
+  
     const audioContext = this.audioContext!
-
+  
     audioElements.forEach((audio) => {
       const audioElement = document.getElementById(
         audio.properties.elementId
       ) as HTMLAudioElement
-
+  
       let sourceNode = this.audioSourceNodes.get(audio.properties.elementId)
       if (!sourceNode) {
         sourceNode = audioContext.createMediaElementSource(audioElement)
         this.audioSourceNodes.set(audio.properties.elementId, sourceNode)
       }
-
+  
       if (!sourceNode) {
         console.error(
           'Error: sourceNode is undefined for',
@@ -1485,42 +1485,48 @@ export class Store {
         )
         return
       }
-
+  
       const dest = audioContext.createMediaStreamDestination()
       sourceNode.connect(dest)
       audioStreams.push(dest.stream)
     })
-
+  
     audioStreams.forEach((audioStream) => {
       if (audioStream.getAudioTracks().length > 0) {
         stream.addTrack(audioStream.getAudioTracks()[0])
       }
     })
-
+  
     const video = document.createElement('video')
     video.srcObject = stream
     video.height = canvas.height
     video.width = canvas.width
-
+  
+     
+  
+  
     video.play().then(() => {
-      console.log('Video is playing...')
 
+  
       const mediaRecorder = new MediaRecorder(stream)
       const chunks: Blob[] = []
-
+  
       mediaRecorder.ondataavailable = function (e) {
         chunks.push(e.data)
         console.log('data available')
       }
-
+  
       mediaRecorder.onstop = async function () {
         const blob = new Blob(chunks, { type: 'video/webm' })
-
+  
         if (mp4) {
+          
+          showLoading()
+  
           const data = new Uint8Array(await blob.arrayBuffer())
           const ffmpeg = new FFmpeg()
           const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd'
-
+  
           await ffmpeg.load({
             coreURL: await toBlobURL(
               `${baseURL}/ffmpeg-core.js`,
@@ -1535,42 +1541,39 @@ export class Store {
           await ffmpeg.writeFile('video.webm', data)
           await ffmpeg.exec([
             '-y',
-            '-i', 'video.webm',
-            '-vf', 'scale=320:-2',   
-            '-r', '15',             
-            '-c:v', 'mpeg4',        
-            '-qscale:v', '5',        
-            '-c:a', 'aac',
+            '-i',
+            'video.webm',
+            '-c:v',
+            'libx264',
+            '-c:a',
+            'aac',
             'video.mp4',
-          ]);
-          
-          
+          ])
 
           const output = await ffmpeg.readFile('video.mp4')
           const outputBlob = new Blob([output], { type: 'video/mp4' })
           const outputUrl = URL.createObjectURL(outputBlob)
-
+          hideLoading()
           const a = document.createElement('a')
           a.download = 'video.mp4'
           a.href = outputUrl
           a.click()
-          alert('✅ MP4 video has been downloaded successfully !')
         } else {
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
           a.download = 'video.webm'
           a.click()
-          alert('✅ WebM video has been downloaded successfully!')
         }
       }
-
+  
       mediaRecorder.start()
       setTimeout(() => {
         mediaRecorder.stop()
       }, this.maxTime)
     })
   }
+  
 
   refreshElements() {
     const store = this
