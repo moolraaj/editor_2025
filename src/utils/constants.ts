@@ -35,7 +35,7 @@ export function showLoading() {
   loadingEl.id = 'loadingIndicator'
   loadingEl.innerText = 'Please wait, video is downloading...' 
   loadingEl.style.position = 'fixed'
-  loadingEl.style.top = '30%'
+  loadingEl.style.top = '57.5%'
   loadingEl.style.left = '53%'
   loadingEl.style.transform = 'translate(-50%, -50%)'
   loadingEl.style.backgroundColor = 'rgb(107 114 128)'
