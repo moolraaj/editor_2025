@@ -1508,95 +1508,120 @@ export class Store {
   }
 
   saveCanvasToVideoWithAudio() {
-    this.saveCanvasToVideoWithAudioWebmMp4()
+    this.saveCanvasToVideoWithAudioWebmMp4();
   }
 
   saveCanvasToVideoWithAudioWebmMp4() {
-    console.log('modified')
-    let mp4 = this.selectedVideoFormat === 'mp4'
-    const canvas = document.getElementById('canvas') as HTMLCanvasElement
-    const stream = canvas.captureStream(30)
-    const audioElements = this.editorElements.filter(isEditorAudioElement)
-    const audioStreams: MediaStream[] = []
+    console.log('Modified to capture video & standalone audio at correct timeline positions');
+
+    let mp4 = this.selectedVideoFormat === 'mp4';
+    const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+    const stream = canvas.captureStream(30);
+
+    const videoElements = this.editorElements.filter(isEditorVideoElement);
+    const audioElements = this.editorElements.filter(isEditorAudioElement);
 
     if (!this.audioContext) {
-      this.audioContext = new AudioContext()
+      this.audioContext = new AudioContext();
     }
 
-    const audioContext = this.audioContext!
+    const audioContext = this.audioContext!;
+    const mixedAudioDestination = audioContext.createMediaStreamDestination();
 
+    /** 🎥 Capture video audio */
+    videoElements.forEach((video) => {
+      const videoElement = document.getElementById(video.properties.elementId) as HTMLVideoElement;
+      if (!videoElement) {
+        console.warn('Skipping missing video element:', video.properties.elementId);
+        return;
+      }
+
+      videoElement.muted = false;
+      videoElement.play().catch((err) => console.error('Video play error:', err));
+
+      let sourceNode = this.audioSourceNodes.get(video.properties.elementId);
+      if (!sourceNode) {
+        sourceNode = audioContext.createMediaElementSource(videoElement);
+        this.audioSourceNodes.set(video.properties.elementId, sourceNode);
+      }
+
+      if (!sourceNode) {
+        console.error('Error: sourceNode is undefined for', video.properties.elementId);
+        return;
+      }
+
+      sourceNode.connect(mixedAudioDestination);
+    });
+
+    /** 🎵 Capture standalone audio at correct timing */
     audioElements.forEach((audio) => {
-      const audioElement = document.getElementById(
-        audio.properties.elementId
-      ) as HTMLAudioElement
+      const audioElement = document.getElementById(audio.properties.elementId) as HTMLAudioElement;
+      if (!audioElement) {
+        console.warn('Skipping missing audio element:', audio.properties.elementId);
+        return;
+      }
 
-      let sourceNode = this.audioSourceNodes.get(audio.properties.elementId)
+      const audioStartTime = audio.timeFrame.start / 1000; // Convert ms to seconds
+
+      // Delay the audio start so it plays at the correct trimmed time
+      setTimeout(() => {
+        console.log(`Starting standalone audio at ${audioStartTime}s`);
+        audioElement.play().catch((err) => console.error('Audio play error:', err));
+      }, audio.timeFrame.start);
+
+      let sourceNode = this.audioSourceNodes.get(audio.properties.elementId);
       if (!sourceNode) {
-        sourceNode = audioContext.createMediaElementSource(audioElement)
-        this.audioSourceNodes.set(audio.properties.elementId, sourceNode)
+        sourceNode = audioContext.createMediaElementSource(audioElement);
+        this.audioSourceNodes.set(audio.properties.elementId, sourceNode);
       }
 
       if (!sourceNode) {
-        console.error(
-          'Error: sourceNode is undefined for',
-          audio.properties.elementId
-        )
-        return
+        console.error('Error: sourceNode is undefined for', audio.properties.elementId);
+        return;
       }
 
-      const dest = audioContext.createMediaStreamDestination()
-      sourceNode.connect(dest)
-      audioStreams.push(dest.stream)
-    })
+      sourceNode.connect(mixedAudioDestination);
+    });
 
-    audioStreams.forEach((audioStream) => {
-      if (audioStream.getAudioTracks().length > 0) {
-        stream.addTrack(audioStream.getAudioTracks()[0])
-      }
-    })
+    /** 🏗️ Merge all audio into stream */
+    const mixedAudioStream = mixedAudioDestination.stream;
+    mixedAudioStream.getAudioTracks().forEach((track) => {
+      stream.addTrack(track);
+    });
 
-    const video = document.createElement('video')
-    video.srcObject = stream
-    video.height = canvas.height
-    video.width = canvas.width
-
-
-
+    /** 🎬 Create video playback */
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.height = canvas.height;
+    video.width = canvas.width;
 
     video.play().then(() => {
-      console.log('Video is playing...')
+      console.log('Video is playing with correctly timed audio.');
 
-      const mediaRecorder = new MediaRecorder(stream)
-      const chunks: Blob[] = []
+      const mediaRecorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
 
       mediaRecorder.ondataavailable = function (e) {
-        chunks.push(e.data)
-        console.log('data available')
-      }
+        chunks.push(e.data);
+        console.log('Data available:', e.data);
+      };
 
       mediaRecorder.onstop = async function () {
-        const blob = new Blob(chunks, { type: 'video/webm' })
+        const blob = new Blob(chunks, { type: 'video/webm' });
 
         if (mp4) {
+          showLoading();
 
-          showLoading()
-
-          const data = new Uint8Array(await blob.arrayBuffer())
-          const ffmpeg = new FFmpeg()
-          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd'
+          const data = new Uint8Array(await blob.arrayBuffer());
+          const ffmpeg = new FFmpeg();
+          const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.2/dist/umd';
 
           await ffmpeg.load({
-            coreURL: await toBlobURL(
-              `${baseURL}/ffmpeg-core.js`,
-              'text/javascript'
-            ),
-            wasmURL: await toBlobURL(
-              `${baseURL}/ffmpeg-core.wasm`,
-              'application/wasm'
-            ),
-          })
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+          });
 
-          await ffmpeg.writeFile('video.webm', data)
+          await ffmpeg.writeFile('video.webm', data);
           await ffmpeg.exec([
             '-y',
             '-i',
@@ -1605,31 +1630,40 @@ export class Store {
             'libx264',
             '-c:a',
             'aac',
+            '-b:a',
+            '192k',
+            '-strict',
+            'experimental',
             'video.mp4',
-          ])
-          const output = await ffmpeg.readFile('video.mp4')
-          const outputBlob = new Blob([output], { type: 'video/mp4' })
-          const outputUrl = URL.createObjectURL(outputBlob)
-          hideLoading()
-          const a = document.createElement('a')
-          a.download = 'video.mp4'
-          a.href = outputUrl
-          a.click()
-        } else {
-          const url = URL.createObjectURL(blob)
-          const a = document.createElement('a')
-          a.href = url
-          a.download = 'video.webm'
-          a.click()
-        }
-      }
+          ]);
 
-      mediaRecorder.start()
+          const output = await ffmpeg.readFile('video.mp4');
+          const outputBlob = new Blob([output], { type: 'video/mp4' });
+          const outputUrl = URL.createObjectURL(outputBlob);
+          hideLoading();
+
+          const a = document.createElement('a');
+          a.download = 'video.mp4';
+          a.href = outputUrl;
+          a.click();
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'video.webm';
+          a.click();
+        }
+      };
+
+      mediaRecorder.start();
       setTimeout(() => {
-        mediaRecorder.stop()
-      }, this.maxTime)
-    })
+        mediaRecorder.stop();
+      }, this.maxTime);
+    });
   }
+
+
+
 
 
   refreshElements() {
