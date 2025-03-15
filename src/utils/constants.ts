@@ -54,5 +54,51 @@ export function hideLoading() {
 }
 
 
+export const MARKINGS = [
+  {
+    interval: 5000,
+    color: "black",
+    size: 16,
+    width: 1,
+  },
+  {
+    interval: 1000,
+    color: "black",
+    size: 8,
+    width: 1,
+  },
+  {
+    interval: 100,
+    color: "black",
+    size: 5,
+    width: 1,
+  },
+];
+
+
+export const canvasBackgroundColor = [
+  "#000000", // Black
+  "#FFFFFF", // White
+  "#404040", // Dark Gray
+  "#808080", // Gray
+  "#C0C0C0", // Silver
+  "#E0E0E0", // Light Gray
+  "#003366", // Dark Blue
+  "#336699", // Medium Blue
+  "#6699CC", // Blue
+  "#99CCFF", // Light Blue
+  "#990000", // Dark Red
+  "#CC3333", // Red
+  "#FF6666", // Light Red
+  "#663300", // Dark Brown
+  "#996633", // Brown
+  "#CC9966", // Light Brown
+  "#006600", // Dark Green
+  "#339933", // Green
+  "#66CC99", // Light Green
+  "#FFFF00", // Yellow
+];
+
+
  
  

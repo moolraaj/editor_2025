@@ -8,27 +8,9 @@ import { ScaleRangeInput } from "./ScaleRangeInput";
 
 import play from '../../../public/play.png'
 import pause from '../../../public/pause.png'
+import { MARKINGS } from "@/utils/constants";
 
-const MARKINGS = [
-  {
-    interval: 5000,
-    color: "black",
-    size: 16,
-    width: 1,
-  },
-  {
-    interval: 1000,
-    color: "black",
-    size: 8,
-    width: 1,
-  },
-  {
-    interval: 100,
-    color: "black",
-    size: 5,
-    width: 1,
-  },
-];
+
 
 export type SeekPlayerProps = {};
 

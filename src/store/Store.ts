@@ -1528,7 +1528,7 @@ export class Store {
     const audioContext = this.audioContext!;
     const mixedAudioDestination = audioContext.createMediaStreamDestination();
 
-    /** 🎥 Capture video audio */
+
     videoElements.forEach((video) => {
       const videoElement = document.getElementById(video.properties.elementId) as HTMLVideoElement;
       if (!videoElement) {

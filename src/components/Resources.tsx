@@ -3,14 +3,12 @@ import React from "react";
 import { StoreContext } from "@/store";
 import { observer } from "mobx-react-lite";
 import { ExportVideoPanel } from "./panels/ExportVideoPanel";
-import { AnimationsPanel } from "./panels/AnimationsPanel";
-import { AudioResourcesPanel } from "./panels/AudioResourcesPanel";
+ import { AudioResourcesPanel } from "./panels/AudioResourcesPanel";
 import { FillPanel } from "./panels/FillPanel";
 import { ImageResourcesPanel } from "./panels/ImageResourcesPanel";
 import { TextResourcesPanel } from "./panels/TextResourcesPanel";
 import { VideoResourcesPanel } from "./panels/VideoResourcesPanel";
-import { EffectsPanel } from "./panels/EffectsPanel";
-import { SvgResourcesPanel } from "./panels/SvgResourcesPanel";
+ import { SvgResourcesPanel } from "./panels/SvgResourcesPanel";
 
 export const Resources = observer(() => {
   const store = React.useContext(StoreContext);
@@ -21,9 +19,7 @@ export const Resources = observer(() => {
       {selectedMenuOption === "Audio" ? <AudioResourcesPanel /> : null}
       {selectedMenuOption === "Image" ? <ImageResourcesPanel /> : null}
       {selectedMenuOption === "Text" ? <TextResourcesPanel /> : null}
-      {selectedMenuOption === "Animation" ? <AnimationsPanel /> : null}
-      {selectedMenuOption === "Effect" ? <EffectsPanel /> : null}
-      {selectedMenuOption === "Export" ? <ExportVideoPanel /> : null}
+       {selectedMenuOption === "Export" ? <ExportVideoPanel /> : null}
       {selectedMenuOption === "Fill" ? <FillPanel /> : null}
       {selectedMenuOption === "SVG" ? <SvgResourcesPanel /> : null}
     </div>

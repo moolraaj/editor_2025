@@ -6,11 +6,11 @@ import {
   MdDownload,
   MdVideoLibrary,
   MdImage,
-  MdTransform,
+  
   MdTitle,
   MdAudiotrack,
   MdOutlineFormatColorFill,
-  MdMovieFilter,
+ 
   MdUploadFile
 } from "react-icons/md";
 import { Store } from "@/store/Store";
@@ -79,22 +79,7 @@ const MENU_OPTIONS = [
       store.setSelectedMenuOption("Text");
     },
   },
-  // {
-  //   name: "Animation",
-  //   icon: MdTransform,
-  //   action: (store: Store) => {
-  //     store.setSelectedMenuOption("Animation");
-  //   },
-  // },
 
-  // {
-  //   name: "Effect",
-  //   icon: MdMovieFilter,
-  //   action: (store: Store) => {
-  //     store.setSelectedMenuOption("Effect");
-  //   },
-  // },
-  
   {
     name: "Fill",
     icon: MdOutlineFormatColorFill,

@@ -139,7 +139,7 @@ export const Element = observer((props: ElementProps) => {
         </button>
       </div>
 
-      {/* Render nested SVG layers if expanded */}
+    
       {element.type === "svg" && isExpanded && element.fabricObject instanceof fabric.Group && (
         <div className="ml-6 mt-2 flex flex-col gap-1">
           {nestedLayers.map((layer, index) => (
@@ -147,7 +147,7 @@ export const Element = observer((props: ElementProps) => {
               key={index}
               className="flex items-center px-2 py-1 bg-gray-700 rounded text-xs cursor-pointer hover:bg-gray-600"
               onClick={() => {
-                // Set selected element to this nested layer.
+              
                 store.setSelectedElement({
                   ...element,
                   fabricObject: layer,
